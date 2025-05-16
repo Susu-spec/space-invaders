@@ -1,0 +1,10 @@
+:root {
+    --color-primary: #000000;
+    --color-secondary: #ffffff;
+    --color-bg-primary: #0a0a0a;
+    --font-primary: 'Raster Forge Regular', sans-serif;
+    --font-secondary: 'Play', sans-serif;
+    --spacing-small: .75rem;
+    --spacing-medium: 1rem;
+    --spacing-large: 1.5rem;
+}
