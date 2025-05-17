@@ -1,23 +1,23 @@
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
-
-
-var canvas = document.getElementById('game-screen');
-canvas.width = CANVAS_WIDTH;
-canvas.height = CANVAS_HEIGHT;
-var ctx = canvas.getContext('2d');
+const PLAYERSPRITEIMG = new Image();
+PLAYERSPRITEIMG.src = './assets/player.svg';
+const PLAYERCLIPRECT = { x: 0, y: 0, width: 40, height: 40 };
+const BULLETSPRITEIMG = new Image();
+BULLETSPRITEIMG.src = './assets/player-projectile.svg'
+const BULLETCLIPRECT = { x: 0, y: 0, width: 20, height: 20 };
 
 let keys = {};
+let lastTime = 0;
+let gameStarted = false;
+
+var canvas = null;
+var ctx = null;
+var player = null;
+var alien = null;
+
 
 // needs pause implementation
-
-document.addEventListener('keydown', (e) => {
-  keys[e.key] = true;
-});
-
-document.addEventListener('keyup', (e) => {
-  keys[e.key] = false;
-});
 
 class Position {
   constructor(x, y) {
@@ -124,20 +124,106 @@ class AnimatedGameEntity extends GameEntity {
       this.clipRect.y, 
       this.clipRect.width, 
       this.clipRect.height, 
-      Math.round(-this.clipRect.w*0.5), 
-      Math.round(-this.clipRect.h*0.5), 
-      this.clipRect.w, 
-      this.clipRect.h
+      Math.round(-this.clipRect.width*0.5), 
+      Math.round(-this.clipRect.height*0.5), 
+      this.clipRect.width, 
+      this.clipRect.height
     );
     ctx.restore();
   }
 }
 
-function isMobile() {
-  return window.innerWidth <= 768;;
-}
+// Player is an animated game entity
+// Player's first position is the middle, always at the bottom
+// Player moves along horizontal axis, tap right to go forward, tap left to move backward, you can not exceed canvas width
+
+class Player extends AnimatedGameEntity {
+  constructor() {
+    super(PLAYERSPRITEIMG, CANVAS_WIDTH/2, CANVAS_HEIGHT - 70, PLAYERCLIPRECT)
+    this.xAccel = 100;
+    this.lives = 0;
+    this.score = 0;
+    this.bullets = [];
+
+  }
+
+  reset() {
+    this.lives = 3;
+    this.score = 0;
+    this.position.set(CANVAS_WIDTH/2, CANVAS_HEIGHT - 70);
+    this.bullets = []
+  }
+
+  movement(dt) {
+    this.position.x = clamp(this.position.x, 50, CANVAS_WIDTH - this.img.width);
+
+    if (keys['ArrowLeft']) {
+      this.position.x -= this.xAccel * dt
+    } else if (keys['ArrowRight']) {
+      this.position.x += this.xAccel * dt
+    }
+
+    if (keys[' ']) {
+      this.shoot();
+    }
+    
+    this.updateBounding();
+  }
+
+    shoot() {
+      const bullet = new Bullet(this.position.x, this.position.y, 1, 1000);
+      this.bullets.push(bullet);
+    }
+
+    // we want to prevent spamming
+
+    updateBullets(dt) {
+      for (let bullet of this.bullets) {
+        bullet.movement(dt);
+      }
+      this.bullets = this.bullets.filter(b => b.alive);
+    }
+    
+    drawBullets() {
+      for (let bullet of this.bullets) {
+        if (bullet.alive) {
+          bullet.drawEntityOnCanvas(); 
+        }
+      }
+    }
+   
+  }
+
+  class Bullet extends AnimatedGameEntity {
+    constructor(x, y, direction, speed) {
+      super(BULLETSPRITEIMG, x, y - 20, BULLETCLIPRECT)
+      this.direction = direction;
+      this.speed = speed;
+      this.alive = true;
+    }
+
+    movement(dt) {
+      this.position.y -= (this.direction * this.speed) * dt;
+      this.position.y = clamp(this.position.y, 0, CANVAS_HEIGHT - this.img.height)
+      if (this.position.y <= 0) {
+        this.alive = false;
+      }
+      this.updateBounding();
+    }
+
+  }
+
+
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(value, max));
+  }
   
 function changeStartTextOnScreenSize() {
+  const startParagraph = document.querySelector('#start-screen p');
   if (isMobile() === true) {
     startParagraph.textContent = 'Tap the screen to Play!'
   } else {
@@ -149,13 +235,66 @@ function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  changeStartTextOnScreenSize()
+  changeStartTextOnScreenSize();
+  if (player) {
+    player.drawEntityOnResize();
+  }
 }
+
+
+function drawGameBoard() {
+  if (!gameStarted && keys['Enter']) {
+    gameStarted = true;
+    document.getElementById('start-screen').style.display = 'none';
+    player = new Player();
+  }
+
+  if (gameStarted && player) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    player.drawEntityOnCanvas();  
+    player.drawBullets();
+  }
+}
+
+
+// game logic, update game logic
+function updateGame(dt) {
+  if (player) {
+    player.movement(dt);
+    player.updateBullets(dt)
+   
+  }
+}
+
+function gameLoop(timeStamp) {
+  const deltaTime = (timeStamp - lastTime) / 1000;
+  lastTime = timeStamp;
+
+  updateGame(deltaTime);
+
+  drawGameBoard()
+
+  requestAnimationFrame(gameLoop); 
+}
+
+document.addEventListener('keydown', (e) => {
+  keys[e.key] = true;
+});
+
+document.addEventListener('keyup', (e) => {
+  keys[e.key] = false;
+});
   
-window.addEventListener('resize', resizeCanvas);
-  
+function initCanvas() {
+  canvas = document.getElementById('game-screen');
+  canvas.width = CANVAS_WIDTH;
+  canvas.height = CANVAS_HEIGHT;
+  ctx = canvas.getContext('2d');   
+  window.addEventListener('resize', resizeCanvas);
+}
 
 window.onload = function() {
-  resizeCanvas()
-  changeStartTextOnScreenSize()
+  initCanvas();
+  requestAnimationFrame(gameLoop)
 };
