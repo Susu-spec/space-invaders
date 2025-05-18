@@ -1,11 +1,32 @@
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
-const PLAYERSPRITEIMG = new Image();
-PLAYERSPRITEIMG.src = './assets/player.svg';
-const PLAYERCLIPRECT = { x: 0, y: 0, width: 40, height: 40 };
-const BULLETSPRITEIMG = new Image();
-BULLETSPRITEIMG.src = './assets/player-projectile.svg'
-const BULLETCLIPRECT = { x: 0, y: 0, width: 20, height: 20 };
+const PLAYER_SPRITE_IMG = new Image();
+const BULLET_SPRITE_IMG = new Image();
+PLAYER_SPRITE_IMG.src = './assets/player.svg';
+BULLET_SPRITE_IMG.src = './assets/player-projectile.svg'
+const PLAYER_CLIP_RECT = { x: 0, y: 0, width: 40, height: 40 };
+const BULLET_CLIP_RECT = { x: 0, y: 0, width: 20, height: 20 };
+const ALIEN_CLIP_RECT = { x: 0, y: 0, width: 40, height: 40 };
+const ALIEN_IMAGE_TYPE_5 = new Image();
+const ALIEN_IMAGE_TYPE_4 = new Image();
+const ALIEN_IMAGE_TYPE_3 = new Image();
+const ALIEN_IMAGE_TYPE_2 = new Image();
+const ALIEN_IMAGE_TYPE_1 = new Image();
+ALIEN_IMAGE_TYPE_5.src = './assets/enemy-one-down.svg'
+ALIEN_IMAGE_TYPE_4.src = './assets/enemy-two-down.svg'
+ALIEN_IMAGE_TYPE_3.src = './assets/enemy-three-down.svg'
+ALIEN_IMAGE_TYPE_2.src = './assets/enemy-three.svg'
+ALIEN_IMAGE_TYPE_1.src = './assets/enemy-two.svg'
+
+const ALIEN_IMAGES = [
+  ALIEN_IMAGE_TYPE_5,
+  ALIEN_IMAGE_TYPE_4,
+  ALIEN_IMAGE_TYPE_3,
+  ALIEN_IMAGE_TYPE_2,
+  ALIEN_IMAGE_TYPE_1,
+];
+
+const ALIEN_POINTS = [50, 40, 30, 20, 10];
 
 let keys = {};
 let lastTime = 0;
@@ -15,6 +36,8 @@ var canvas = null;
 var ctx = null;
 var player = null;
 var alien = null;
+var alienLasers = [];
+var aliens = null;
 
 
 // needs pause implementation
@@ -109,7 +132,6 @@ class AnimatedGameEntity extends GameEntity {
   }
 
   drawEntityOnCanvas() {
-    // Set specific logic for specific entity
     ctx.save();
     ctx.transform(
       this.scale.x,
@@ -139,7 +161,7 @@ class AnimatedGameEntity extends GameEntity {
 
 class Player extends AnimatedGameEntity {
   constructor() {
-    super(PLAYERSPRITEIMG, CANVAS_WIDTH/2, CANVAS_HEIGHT - 70, PLAYERCLIPRECT)
+    super(PLAYER_SPRITE_IMG, CANVAS_WIDTH/2, CANVAS_HEIGHT - 70, PLAYER_CLIP_RECT)
     this.xAccel = 100;
     this.lives = 0;
     this.score = 0;
@@ -170,57 +192,150 @@ class Player extends AnimatedGameEntity {
     this.updateBounding();
   }
 
-    shoot() {
-      const bullet = new Bullet(this.position.x, this.position.y, 1, 1000);
-      this.bullets.push(bullet);
+  shoot() {
+    const bullet = new Bullet(this.position.x, this.position.y, 1, 500);
+    this.bullets.push(bullet);
+  }
+
+  // we want to prevent spamming
+
+  updateBullets(dt) {
+    for (let bullet of this.bullets) {
+      bullet.movement(dt);
     }
-
-    // we want to prevent spamming
-
-    updateBullets(dt) {
-      for (let bullet of this.bullets) {
-        bullet.movement(dt);
+    this.bullets = this.bullets.filter(b => b.alive);
+  }
+  
+  drawBullets() {
+    for (let bullet of this.bullets) {
+      if (bullet.alive) {
+        bullet.drawEntityOnCanvas(); 
       }
-      this.bullets = this.bullets.filter(b => b.alive);
     }
-    
-    drawBullets() {
-      for (let bullet of this.bullets) {
-        if (bullet.alive) {
-          bullet.drawEntityOnCanvas(); 
-        }
+  }
+}
+
+class Bullet extends AnimatedGameEntity {
+  constructor(x, y, direction, speed) {
+    super(BULLET_SPRITE_IMG, x, y - 20, BULLET_CLIP_RECT)
+    this.direction = direction;
+    this.speed = speed;
+    this.alive = true;
+  }
+
+  movement(dt) {
+    this.position.y -= (this.direction * this.speed) * dt;
+    this.position.y = clamp(this.position.y, 0, CANVAS_HEIGHT - this.img.height)
+    if (this.position.y <= 0) {
+      this.alive = false;
+    }
+    this.updateBounding();
+  }
+}
+
+class Laser extends Bullet {
+  constructor(x, y, direction, speed) {
+    super(x, y, direction, speed);
+  }
+
+  movement(dt) {
+    this.position.y -= (this.direction * this.speed) * dt;
+    if (this.position.y >= CANVAS_HEIGHT) {
+      this.alive = false;
+    }
+    this.updateBounding();
+  } 
+}
+
+class Alien extends AnimatedGameEntity {
+  constructor(img, x, y, points) {
+    super(img, x, y, points, ALIEN_CLIP_RECT)
+    this.alive = true;
+    this.points = points;
+    this.lastShotTime = 0;
+    this.shootCoolDown = Math.random() * 2000 + 1000;
+  }
+
+  shoot() {
+    const laser = new Laser(this.position.x, this.position.y, -1, 300);
+    alienLasers.push(laser);
+  }
+
+  drawEntityOnCanvas() {
+    ctx.drawImage(this.img, this.position.x, this.position.y, 20, 20);
+  } 
+}
+
+class AlienGrid {
+  constructor(x, y, rows, cols, spacing) {
+    this.aliens = [];
+    this.position = new Position(x, y)
+    this.rows = rows;
+    this.cols = cols;
+    this.spacing = spacing;
+    this.createGrid();
+  }
+
+  createGrid() {
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const x = this.position.x + col * this.spacing;
+        const y = this.position.y + row * this.spacing;
+        const img = ALIEN_IMAGES[row % ALIEN_IMAGES.length];
+        const points = ALIEN_POINTS[row % ALIEN_POINTS.length];
+
+        this.aliens.push(new Alien(img, x, y, points));
+        
       }
     }
-   
   }
 
-  class Bullet extends AnimatedGameEntity {
-    constructor(x, y, direction, speed) {
-      super(BULLETSPRITEIMG, x, y - 20, BULLETCLIPRECT)
-      this.direction = direction;
-      this.speed = speed;
-      this.alive = true;
-    }
+  update(currentTime, dt) {
+    var columnAliens = null;
+    for (let col = 0; col < this.cols; col++) {
+      columnAliens = this.aliens.filter(alien => 
+        Math.round((alien.position.x - this.position.x) / this.spacing) === col && alien.alive
+      )
 
-    movement(dt) {
-      this.position.y -= (this.direction * this.speed) * dt;
-      this.position.y = clamp(this.position.y, 0, CANVAS_HEIGHT - this.img.height)
-      if (this.position.y <= 0) {
-        this.alive = false;
+      const shooter = columnAliens.sort((a, b) => b.position.y - a.position.y)[0]
+
+      if (shooter) {
+        if ((currentTime - shooter.lastShotTime) > shooter.shootCoolDown) {
+          if (Math.random() < 0.001) {
+            shooter.shoot();
+            shooter.lastShotTime = currentTime;
+            shooter.shootCoolDown = Math.random() * 2000 + 1000;
+          }
+        } 
       }
-      this.updateBounding();
     }
 
+    for (let laser of alienLasers) {
+      laser.movement(dt);
+    } 
   }
 
-
-  function isMobile() {
-    return window.innerWidth <= 768;
+  drawAliensOnCanvas() {
+    for (let alien of this.aliens) {
+      if (alien.alive) {
+        alien.drawEntityOnCanvas();
+      }
+    }
   }
+}
 
-  function clamp(value, min, max) {
-    return Math.max(min, Math.min(value, max));
-  }
+function isMobile() {
+  return window.innerWidth <= 768;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(value, max));
+}
+
+function getRandomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 10)) + min;
+}
+
   
 function changeStartTextOnScreenSize() {
   const startParagraph = document.querySelector('#start-screen p');
@@ -247,6 +362,7 @@ function drawGameBoard() {
     gameStarted = true;
     document.getElementById('start-screen').style.display = 'none';
     player = new Player();
+    aliens = new AlienGrid(0, 0, 5, 15, 40)
   }
 
   if (gameStarted && player) {
@@ -254,24 +370,35 @@ function drawGameBoard() {
 
     player.drawEntityOnCanvas();  
     player.drawBullets();
+    aliens.drawAliensOnCanvas();
+
+
+    for (let bullet of alienLasers) {
+      bullet.drawEntityOnCanvas();
+    }
+
   }
 }
 
 
 // game logic, update game logic
-function updateGame(dt) {
+function updateGame(timeStamp, dt) {
   if (player) {
     player.movement(dt);
-    player.updateBullets(dt)
-   
+    player.updateBullets(dt)  
+  }
+
+  if (aliens) {
+    aliens.update(timeStamp, dt)
   }
 }
 
-function gameLoop(timeStamp) {
+function gameLoop() {
+  const timeStamp = performance.now();
   const deltaTime = (timeStamp - lastTime) / 1000;
   lastTime = timeStamp;
 
-  updateGame(deltaTime);
+  updateGame(timeStamp, deltaTime);
 
   drawGameBoard()
 
