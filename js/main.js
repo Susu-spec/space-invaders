@@ -168,7 +168,7 @@ class Player extends AnimatedGameEntity {
   constructor() {
     super(PLAYER_SPRITE_IMG, CANVAS_WIDTH/2, CANVAS_HEIGHT - 70, PLAYER_CLIP_RECT)
     this.xAccel = 100;
-    this.lives = 0;
+    this.lives = 3;
     this.score = 0;
     this.bullets = [];
 
@@ -278,6 +278,9 @@ class AlienGrid {
     this.rows = rows;
     this.cols = cols;
     this.spacing = spacing;
+    this.direction = 1;
+    this.speed = 20;
+    this.stepDown = 10;
     this.createGrid();
   }
 
@@ -295,7 +298,7 @@ class AlienGrid {
     }
   }
 
-  update(currentTime, dt) {
+  updateShooting(currentTime, dt) {
     var columnAliens = null;
     for (let col = 0; col < this.cols; col++) {
       columnAliens = this.aliens.filter(alien => 
@@ -318,6 +321,37 @@ class AlienGrid {
     for (let laser of alienLasers) {
       laser.movement(dt);
     } 
+  }
+
+  update(currentTime, dt) {
+    let xVelocity = this.speed * this.direction * dt;
+    let shouldStepDown = false;
+
+
+    for (let alien of this.aliens) {
+      if (alien.alive === false) continue;
+
+      const nextXPosition = alien.position.x + xVelocity;
+      
+      if (nextXPosition <= 50 ||  nextXPosition + alien.img.width >= CANVAS_WIDTH + 50) {
+        shouldStepDown = true;
+        this.direction *= -1;
+        break;
+      }
+    }
+
+    for (let alien of this.aliens) {
+      if (alien.alive === false) continue;
+
+      if(shouldStepDown) {
+        alien.position.y += this.stepDown;
+      } else {
+        alien.position.x += xVelocity;
+      }
+    }
+
+    this.updateShooting(currentTime, dt);
+
   }
 
   drawAliensOnCanvas() {
@@ -355,6 +389,45 @@ const  xOverlap = valueInRange(A.position.x, B.position.x, B.position.x + B.widt
   return xOverlap && yOverlap;
 }
 
+function checkPlayerBulletsVsAliens() {
+  // uses let .. of ... to return objects
+  // let ... in ... returns indices
+  for (let bullet of player.bullets) {
+    for (let alien of aliens) {
+      if (bullet.alive && alien.alive) {
+        const collided = isColliding(bullet, alien);
+        if (collided) {
+          player.score += alien.points;
+          bullet.alive = alien.alive = false;
+        }
+      }
+    }
+  }
+}
+
+function checkAlienBulletsVsPlayer() {
+  if (player.lives <= 0) return;
+
+  for (let laser of alienLasers) {
+    if (player.lives > 0) {
+      const collided = isColliding(laser, player);
+      if (collided) {
+        player.lives -= 1;
+        laser.alive = false;
+        break;
+      }
+    } 
+  }
+}
+
+function checkPlayerVsAliens() {
+  for (let alien of aliens) {
+    const collided = isColliding(alien, player);
+    if (collided) {
+      // game over - game over should have reset
+    }
+  }
+}
   
 function changeStartTextOnScreenSize() {
   const startParagraph = document.querySelector('#start-screen p');
@@ -381,7 +454,7 @@ function drawGameBoard() {
     gameStarted = true;
     document.getElementById('start-screen').style.display = 'none';
     player = new Player();
-    aliens = new AlienGrid(0, 0, 5, 15, 40)
+    aliens = new AlienGrid(50, 0, 5, 15, 40)
   }
 
   if (gameStarted && player) {
