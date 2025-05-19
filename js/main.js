@@ -2,8 +2,14 @@ const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
 const PLAYER_SPRITE_IMG = new Image();
 const BULLET_SPRITE_IMG = new Image();
+const ALIEN_LASER_IMG = new Image();
+const PLAYER_DEATH_IMAGE = new Image();
+const ENEMY_DEATH_IMAGE = new Image();
+ENEMY_DEATH_IMAGE.src = './assets/enemy-death.svg';
+PLAYER_DEATH_IMAGE.src = './assets/player-death.svg';
 PLAYER_SPRITE_IMG.src = './assets/player.svg';
 BULLET_SPRITE_IMG.src = './assets/player-projectile.svg'
+ALIEN_LASER_IMG.src = './assets/laser.svg'
 
 // Clip rects determine what parts of the image we'd like to draw
 // Not using a sprite sheet (large image with game icons) here 
@@ -36,6 +42,7 @@ const ALIEN_POINTS = [50, 40, 30, 20, 10];
 let keys = {};
 let lastTime = 0;
 let gameStarted = false;
+let canShoot = true;
 
 var canvas = null;
 var ctx = null;
@@ -79,11 +86,6 @@ class BoundingBox {
   }
 }
 
-
-
-// think about adding images
-
-// detect when game elements reach outside the bounds
 class GameEntity {
   constructor(img, x, y) {
     this.img = img;
@@ -98,8 +100,6 @@ class GameEntity {
     this.scale.setNewPosition(x, y);
   }
 
-  updateByTime(dt) {}
-  // Might set as internal logic
   updateBounding() {
     this.bounding.setNewBoundRect(
     this.position.x, 
@@ -165,12 +165,16 @@ class AnimatedGameEntity extends GameEntity {
 // Player moves along horizontal axis, tap right to go forward, tap left to move backward, you can not exceed canvas width
 
 class Player extends AnimatedGameEntity {
-  constructor() {
-    super(PLAYER_SPRITE_IMG, CANVAS_WIDTH/2, CANVAS_HEIGHT - 70, PLAYER_CLIP_RECT)
+  constructor(img) {
+    super(img, CANVAS_WIDTH/2, CANVAS_HEIGHT - 70, PLAYER_CLIP_RECT)
+    this.img = img;
     this.xAccel = 100;
     this.lives = 3;
     this.score = 0;
     this.bullets = [];
+    this.lastShotTime = 0;
+    this.dying = false;
+    this.deathTimer = 0.5;
 
   }
 
@@ -179,9 +183,19 @@ class Player extends AnimatedGameEntity {
     this.score = 0;
     this.position.set(CANVAS_WIDTH/2, CANVAS_HEIGHT - 70);
     this.bullets = []
+    this.img = PLAYER_SPRITE_IMG;
   }
 
   movement(dt) {
+    if (this.dying) {
+      this.deathTimer -= dt;
+      if (this.deathTimer <= 0) {
+        this.dying = false;
+        this.img = PLAYER_SPRITE_IMG
+      }
+      return;
+    }
+    
     this.position.x = clamp(this.position.x, 50, CANVAS_WIDTH - this.img.width);
 
     if (keys['ArrowLeft']) {
@@ -189,20 +203,14 @@ class Player extends AnimatedGameEntity {
     } else if (keys['ArrowRight']) {
       this.position.x += this.xAccel * dt
     }
-
-    if (keys[' ']) {
-      this.shoot();
-    }
     
     this.updateBounding();
   }
 
   shoot() {
-    const bullet = new Bullet(this.position.x, this.position.y, 1, 500);
+    const bullet = new Bullet(BULLET_SPRITE_IMG, this.position.x, this.position.y, 1, 500);
     this.bullets.push(bullet);
   }
-
-  // we want to prevent spamming
 
   updateBullets(dt) {
     for (let bullet of this.bullets) {
@@ -221,8 +229,8 @@ class Player extends AnimatedGameEntity {
 }
 
 class Bullet extends AnimatedGameEntity {
-  constructor(x, y, direction, speed) {
-    super(BULLET_SPRITE_IMG, x, y - 20, BULLET_CLIP_RECT)
+  constructor(img, x, y, direction, speed) {
+    super(img, x, y - 20, BULLET_CLIP_RECT)
     this.direction = direction;
     this.speed = speed;
     this.alive = true;
@@ -240,7 +248,7 @@ class Bullet extends AnimatedGameEntity {
 
 class Laser extends Bullet {
   constructor(x, y, direction, speed) {
-    super(x, y, direction, speed);
+    super(ALIEN_LASER_IMG, x, y, direction, speed,);
   }
 
   movement(dt) {
@@ -257,6 +265,8 @@ class Alien extends AnimatedGameEntity {
     super(img, x, y, points, ALIEN_CLIP_RECT)
     this.alive = true;
     this.points = points;
+    this.dying = false;
+    this.deathTimer = 0.2;
     this.lastShotTime = 0;
     this.shootCoolDown = Math.random() * 2000 + 1000;
   }
@@ -333,7 +343,7 @@ class AlienGrid {
 
       const nextXPosition = alien.position.x + xVelocity;
       
-      if (nextXPosition <= 50 ||  nextXPosition + alien.img.width >= CANVAS_WIDTH + 50) {
+      if (nextXPosition <= 50 ||  nextXPosition + alien.img.width >= CANVAS_WIDTH - 50) {
         shouldStepDown = true;
         this.direction *= -1;
         break;
@@ -342,6 +352,15 @@ class AlienGrid {
 
     for (let alien of this.aliens) {
       if (alien.alive === false) continue;
+
+      if (alien.dying) {
+        alien.deathTimer -= dt;
+        if (alien.deathTimer <= 0) {
+          alien.alive = false;
+          alien.dying = false;
+        }
+      }
+    
 
       if(shouldStepDown) {
         alien.position.y += this.stepDown;
@@ -379,55 +398,64 @@ function valueInRange(value, min, max) {
   return (value <= max) && (value >= min);
 }
  
-// allows edge contact when in range
-function isColliding(A, B) {
-const  xOverlap = valueInRange(A.position.x, B.position.x, B.position.x + B.width) ||
-  valueInRange(B.position.x, A.position.x, A.position.x + A.width);
- 
-  const yOverlap = valueInRange(A.position.y, B.position.y, B.position.y + B.height) ||
-  valueInRange(B.position.y, A.position.y, A.position.y + A.height); 
-  return xOverlap && yOverlap;
+// aabb collision detection allows edge contact when in range
+function isColliding(a, b) {
+  return (
+    a.position.x <= b.position.x + b.img.width &&
+    a.position.x + a.img.width >= b.position.x &&
+    a.position.y <= b.position.y + b.img.height &&
+    a.position.y + a.img.height >= b.position.y
+  );
 }
 
 function checkPlayerBulletsVsAliens() {
   // uses let .. of ... to return objects
   // let ... in ... returns indices
   for (let bullet of player.bullets) {
-    for (let alien of aliens) {
-      if (bullet.alive && alien.alive) {
-        const collided = isColliding(bullet, alien);
-        if (collided) {
-          player.score += alien.points;
-          bullet.alive = alien.alive = false;
-        }
+    for (let alien of aliens.aliens) {
+      if (bullet.alive && alien.alive && isColliding(bullet, alien)) {
+        player.score += alien.points;
+        alien.dying = true;
+        alien.deathTimer = 0.5;
+        alien.img = ENEMY_DEATH_IMAGE;
+        bullet.alive = false;
       }
     }
   }
 }
 
+
 function checkAlienBulletsVsPlayer() {
   if (player.lives <= 0) return;
 
   for (let laser of alienLasers) {
-    if (player.lives > 0) {
-      const collided = isColliding(laser, player);
-      if (collided) {
-        player.lives -= 1;
-        laser.alive = false;
-        break;
-      }
+    if (player.lives > 0 && isColliding(laser, player)) {
+      player.lives -= 1;
+      player.dying = true;
+      player.deathTimer = 0.5;
+      player.img = PLAYER_DEATH_IMAGE
+      laser.alive = false;
+      break;
     } 
   }
 }
 
 function checkPlayerVsAliens() {
-  for (let alien of aliens) {
+  for (let alien of aliens.aliens) {
     const collided = isColliding(alien, player);
     if (collided) {
       // game over - game over should have reset
     }
   }
 }
+
+function collisionDetection(dt) {
+  checkPlayerBulletsVsAliens(dt);
+  checkAlienBulletsVsPlayer();
+  checkPlayerVsAliens();
+}
+
+
   
 function changeStartTextOnScreenSize() {
   const startParagraph = document.querySelector('#start-screen p');
@@ -453,7 +481,7 @@ function drawGameBoard() {
   if (!gameStarted && keys['Enter']) {
     gameStarted = true;
     document.getElementById('start-screen').style.display = 'none';
-    player = new Player();
+    player = new Player(PLAYER_SPRITE_IMG);
     aliens = new AlienGrid(50, 0, 5, 15, 40)
   }
 
@@ -473,7 +501,6 @@ function drawGameBoard() {
 }
 
 
-// game logic, update game logic
 function updateGame(timeStamp, dt) {
   if (player) {
     player.movement(dt);
@@ -483,6 +510,9 @@ function updateGame(timeStamp, dt) {
   if (aliens) {
     aliens.update(timeStamp, dt)
   }
+
+  if (player && aliens) collisionDetection(dt);
+
 }
 
 function gameLoop() {
@@ -497,13 +527,30 @@ function gameLoop() {
   requestAnimationFrame(gameLoop); 
 }
 
-document.addEventListener('keydown', (e) => {
+document.addEventListener("keydown", (e) => {
+  // Moved shooting mechanic in here 
+  // because shoot didn't need to be called in `player.movement`
+  // too many function calls
+  if (e.code === "Space" && canShoot && player) {
+    const now = performance.now();
+    if (now - player.lastShotTime >= 300) {
+      player.shoot();
+      player.lastShotTime = now;
+      canShoot = false;
+    }
+  }
+
   keys[e.key] = true;
 });
 
-document.addEventListener('keyup', (e) => {
+document.addEventListener("keyup", (e) => {
+  if (e.code === "Space" && player) {
+    canShoot = true;
+  }
+
   keys[e.key] = false;
 });
+
   
 function initCanvas() {
   canvas = document.getElementById('game-screen');
