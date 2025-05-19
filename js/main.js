@@ -4,9 +4,14 @@ const PLAYER_SPRITE_IMG = new Image();
 const BULLET_SPRITE_IMG = new Image();
 PLAYER_SPRITE_IMG.src = './assets/player.svg';
 BULLET_SPRITE_IMG.src = './assets/player-projectile.svg'
+
+// Clip rects determine what parts of the image we'd like to draw
+// Not using a sprite sheet (large image with game icons) here 
+// but if we did, we'd absolutely need this for its performance and dynamism
 const PLAYER_CLIP_RECT = { x: 0, y: 0, width: 40, height: 40 };
 const BULLET_CLIP_RECT = { x: 0, y: 0, width: 20, height: 20 };
 const ALIEN_CLIP_RECT = { x: 0, y: 0, width: 40, height: 40 };
+
 const ALIEN_IMAGE_TYPE_5 = new Image();
 const ALIEN_IMAGE_TYPE_4 = new Image();
 const ALIEN_IMAGE_TYPE_3 = new Image();
@@ -40,7 +45,7 @@ var alienLasers = [];
 var aliens = null;
 
 
-// needs pause implementation
+// needs pause and reset implementation
 
 class Position {
   constructor(x, y) {
@@ -334,6 +339,20 @@ function clamp(value, min, max) {
 
 function getRandomNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 10)) + min;
+}
+
+function valueInRange(value, min, max) {
+  return (value <= max) && (value >= min);
+}
+ 
+// allows edge contact when in range
+function isColliding(A, B) {
+const  xOverlap = valueInRange(A.position.x, B.position.x, B.position.x + B.width) ||
+  valueInRange(B.position.x, A.position.x, A.position.x + A.width);
+ 
+  const yOverlap = valueInRange(A.position.y, B.position.y, B.position.y + B.height) ||
+  valueInRange(B.position.y, A.position.y, A.position.y + A.height); 
+  return xOverlap && yOverlap;
 }
 
   
