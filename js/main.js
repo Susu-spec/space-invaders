@@ -1,55 +1,95 @@
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
-const PLAYER_SPRITE_IMG = new Image();
-const BULLET_SPRITE_IMG = new Image();
-const ALIEN_LASER_IMG = new Image();
-const PLAYER_DEATH_IMAGE = new Image();
-const ENEMY_DEATH_IMAGE = new Image();
-ENEMY_DEATH_IMAGE.src = './assets/enemy-death.svg';
-PLAYER_DEATH_IMAGE.src = './assets/player-death.svg';
-PLAYER_SPRITE_IMG.src = './assets/player.svg';
-BULLET_SPRITE_IMG.src = './assets/player-projectile.svg'
-ALIEN_LASER_IMG.src = './assets/laser.svg'
 
-// Clip rects determine what parts of the image we'd like to draw
-// Not using a sprite sheet (large image with game icons) here 
-// but if we did, we'd absolutely need this for its performance and dynamism
-const PLAYER_CLIP_RECT = { x: 0, y: 0, width: 40, height: 40 };
-const BULLET_CLIP_RECT = { x: 0, y: 0, width: 20, height: 20 };
-const ALIEN_CLIP_RECT = { x: 0, y: 0, width: 40, height: 40 };
+let keys = {};
+let gameStarted = false;
+var alienLasers = [];
 
-const ALIEN_IMAGE_TYPE_5 = new Image();
-const ALIEN_IMAGE_TYPE_4 = new Image();
-const ALIEN_IMAGE_TYPE_3 = new Image();
-const ALIEN_IMAGE_TYPE_2 = new Image();
-const ALIEN_IMAGE_TYPE_1 = new Image();
-ALIEN_IMAGE_TYPE_5.src = './assets/enemy-one-down.svg'
-ALIEN_IMAGE_TYPE_4.src = './assets/enemy-two-down.svg'
-ALIEN_IMAGE_TYPE_3.src = './assets/enemy-three-down.svg'
-ALIEN_IMAGE_TYPE_2.src = './assets/enemy-three.svg'
-ALIEN_IMAGE_TYPE_1.src = './assets/enemy-two.svg'
+const createImage = (src) => {
+  const img = new Image();
+  img.src = src;
+  return img;
+}
 
 const ALIEN_IMAGES = [
-  ALIEN_IMAGE_TYPE_5,
-  ALIEN_IMAGE_TYPE_4,
-  ALIEN_IMAGE_TYPE_3,
-  ALIEN_IMAGE_TYPE_2,
-  ALIEN_IMAGE_TYPE_1,
+  ALIEN_IMAGE_TYPE_5 = createImage('./assets/images/enemy-one-down.svg'),
+  ALIEN_IMAGE_TYPE_4 = createImage('./assets/images/enemy-two-down.svg'),
+  ALIEN_IMAGE_TYPE_3 = createImage('./assets/images/enemy-three-down.svg'),
+  ALIEN_IMAGE_TYPE_2 = createImage('./assets/images/enemy-three.svg'),
+  ALIEN_IMAGE_TYPE_1 = createImage('./assets/images/enemy-two.svg'),
 ];
 
 const ALIEN_POINTS = [50, 40, 30, 20, 10];
 
-let keys = {};
-let lastTime = 0;
-let gameStarted = false;
-let canShoot = true;
 
-var canvas = null;
-var ctx = null;
-var player = null;
-var alien = null;
-var alienLasers = [];
-var aliens = null;
+const Assets = {
+  images: {
+    player: createImage('./assets/images/player.svg'),
+    bullet: createImage('./assets/images/player-projectile.svg'),
+    laser: createImage('./assets/images/laser.svg'),
+    playerDeath: createImage('./assets/images/player-death.svg'),
+    enemyDeath: createImage('./assets/images/enemy-death.svg')
+  },
+  sounds: {
+    shoot: new Audio('./assets/sounds/shoot.wav'),
+    playerDead: new Audio('./assets/sounds/player-dead.wav'),
+    invaderDead: new Audio('./assets/sounds/invader-killed.wav'),
+    background: new Audio('./assets/sounds/space-invaders-background.mpeg')
+  },
+  clipRect: {
+    player: { x: 0, y: 0, width: 50, height: 40 },
+    alien: { x: 0, y: 0, width: 20, height: 20 },
+    bullet: { x: 0, y: 0, width: 20, height: 20 }
+  },
+}
+
+const { images, sounds, clipRect } = Assets;
+
+const levels = [
+  {
+    speedMultiplier: 1,
+    alienCount: 5,
+    alienSpeed: 50,
+    duration: 30,
+  },
+  {
+    speedMultiplier: 1.5,
+    alienCount: 8,
+    alienSpeed: 80,
+    duration: 45,
+  },
+  {
+    speedMultiplier: 2,
+    alienCount: 12,
+    alienSpeed: 110,
+    duration: 60,
+  },
+];
+
+
+
+const GameStates = {
+  LOADING: 'loading',
+  PLAYING: 'playing',
+  PAUSED: 'paused',
+  GAME_OVER: 'gameOver'
+}
+
+let currentState = GameStates.LOADING;
+
+function updateGameState(newState) {
+  currentState = newState;
+  switch (currentState) {
+    case GameStates.LOADING:
+      break;
+    case GameStates.PLAYING:
+      break;
+    case GameStates.PAUSED:
+      break;
+    case GameStates.PAUSED:
+      break;
+  }
+}
 
 
 // needs pause and reset implementation
@@ -71,7 +111,6 @@ class Position {
 // Need to know if the area of one object collides with another
 class BoundingBox {
   constructor(x, y, width, height) {
-    // Fall back if undefined
     this.x = x ?? 0;
     this.y = y ?? 0;
     this.width = width ?? 0;
@@ -104,8 +143,8 @@ class GameEntity {
     this.bounding.setNewBoundRect(
     this.position.x, 
     this.position.y, 
-    (this.img.width * this.scale.x), 
-    (this.img.height * this.scale.y)
+    (this.clipRect.width * this.scale.x), 
+    (this.clipRect.height * this.scale.y)
     )
   }
 
@@ -145,6 +184,7 @@ class AnimatedGameEntity extends GameEntity {
       this.position.x, 
       this.position.y
     );
+    // centers 
     ctx.drawImage(
       this.img, 
       this.clipRect.x, 
@@ -160,14 +200,13 @@ class AnimatedGameEntity extends GameEntity {
   }
 }
 
-// Player is an animated game entity
-// Player's first position is the middle, always at the bottom
-// Player moves along horizontal axis, tap right to go forward, tap left to move backward, you can not exceed canvas width
 
 class Player extends AnimatedGameEntity {
   constructor(img) {
-    super(img, CANVAS_WIDTH/2, CANVAS_HEIGHT - 70, PLAYER_CLIP_RECT)
+    super(img, CANVAS_WIDTH/2, CANVAS_HEIGHT - (clipRect.player.height / 2) - 10, clipRect.player)
     this.img = img;
+    this.clipRect.width = this.img.width;
+    this.clipRect.height = this.img.height;
     this.xAccel = 100;
     this.lives = 3;
     this.score = 0;
@@ -175,15 +214,14 @@ class Player extends AnimatedGameEntity {
     this.lastShotTime = 0;
     this.dying = false;
     this.deathTimer = 0.5;
-
   }
 
   reset() {
     this.lives = 3;
     this.score = 0;
-    this.position.set(CANVAS_WIDTH/2, CANVAS_HEIGHT - 70);
+    this.position.set(CANVAS_WIDTH/2, CANVAS_HEIGHT -  (clipRect.player.height / 2) - 10);
     this.bullets = []
-    this.img = PLAYER_SPRITE_IMG;
+    this.img = images.player;
   }
 
   movement(dt) {
@@ -191,7 +229,7 @@ class Player extends AnimatedGameEntity {
       this.deathTimer -= dt;
       if (this.deathTimer <= 0) {
         this.dying = false;
-        this.img = PLAYER_SPRITE_IMG
+        this.img = images.player;
       }
       return;
     }
@@ -208,8 +246,12 @@ class Player extends AnimatedGameEntity {
   }
 
   shoot() {
-    const bullet = new Bullet(BULLET_SPRITE_IMG, this.position.x, this.position.y, 1, 500);
+    const bullet = new Bullet(images.bullet, this.position.x + (this.clipRect.width / 2) - (clipRect.bullet.width / 2), this.position.y, 1, 1000);
     this.bullets.push(bullet);
+  }
+
+  drawEntityOnCanvas() {
+    ctx.drawImage(this.img, this.position.x, this.position.y, this.clipRect.width, this.clipRect.height);
   }
 
   updateBullets(dt) {
@@ -230,7 +272,9 @@ class Player extends AnimatedGameEntity {
 
 class Bullet extends AnimatedGameEntity {
   constructor(img, x, y, direction, speed) {
-    super(img, x, y - 20, BULLET_CLIP_RECT)
+    super(img, x, y, clipRect.bullet);
+    this.clipRect.width = this.img.width;
+    this.clipRect.height = this.img.height;
     this.direction = direction;
     this.speed = speed;
     this.alive = true;
@@ -238,17 +282,21 @@ class Bullet extends AnimatedGameEntity {
 
   movement(dt) {
     this.position.y -= (this.direction * this.speed) * dt;
-    this.position.y = clamp(this.position.y, 0, CANVAS_HEIGHT - this.img.height)
+    this.position.y = clamp(this.position.y, 0, CANVAS_HEIGHT - this.clipRect.height)
     if (this.position.y <= 0) {
       this.alive = false;
     }
     this.updateBounding();
   }
+
+  drawEntityOnCanvas() {
+    ctx.drawImage(this.img, this.position.x, this.position.y, this.clipRect.width, this.clipRect.height);
+  }
 }
 
 class Laser extends Bullet {
   constructor(x, y, direction, speed) {
-    super(ALIEN_LASER_IMG, x, y, direction, speed,);
+    super(images.laser, x, y, direction, speed);
   }
 
   movement(dt) {
@@ -257,12 +305,13 @@ class Laser extends Bullet {
       this.alive = false;
     }
     this.updateBounding();
-  } 
+  }
 }
 
 class Alien extends AnimatedGameEntity {
   constructor(img, x, y, points) {
-    super(img, x, y, points, ALIEN_CLIP_RECT)
+    super(img, x, y, points, clipRect.alien)
+    this.clipRect = clipRect.alien;
     this.alive = true;
     this.points = points;
     this.dying = false;
@@ -272,19 +321,25 @@ class Alien extends AnimatedGameEntity {
   }
 
   shoot() {
-    const laser = new Laser(this.position.x, this.position.y, -1, 300);
+    const laserX = this.position.x + clipRect.alien.width / 2;
+    const laserY = this.position.y + clipRect.alien.height;
+    const laser = new Laser(laserX, laserY, -1, 800);
     alienLasers.push(laser);
   }
 
   drawEntityOnCanvas() {
-    ctx.drawImage(this.img, this.position.x, this.position.y, 20, 20);
-  } 
-}
+    ctx.drawImage(this.img, this.position.x, this.position.y, this.clipRect.width, this.clipRect.height);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.01;
+    ctx.restore();
+  }
+}  
 
 class AlienGrid {
   constructor(x, y, rows, cols, spacing) {
     this.aliens = [];
-    this.position = new Position(x, y)
+    this.position = new Position(x, y + 10)
     this.rows = rows;
     this.cols = cols;
     this.spacing = spacing;
@@ -308,6 +363,10 @@ class AlienGrid {
     }
   }
 
+  setSpeed(speed) {
+    this.speed = speed;
+  }
+
   updateShooting(currentTime, dt) {
     var columnAliens = null;
     for (let col = 0; col < this.cols; col++) {
@@ -317,14 +376,10 @@ class AlienGrid {
 
       const shooter = columnAliens.sort((a, b) => b.position.y - a.position.y)[0]
 
-      if (shooter) {
-        if ((currentTime - shooter.lastShotTime) > shooter.shootCoolDown) {
-          if (Math.random() < 0.001) {
-            shooter.shoot();
-            shooter.lastShotTime = currentTime;
-            shooter.shootCoolDown = Math.random() * 2000 + 1000;
-          }
-        } 
+      if (shooter && ((currentTime - shooter.lastShotTime) > shooter.shootCoolDown) && Math.random() < 0.001) {
+        shooter.shoot();
+        shooter.lastShotTime = currentTime;
+        shooter.shootCoolDown = Math.random() * 2000 + 1000;
       }
     }
 
@@ -356,6 +411,8 @@ class AlienGrid {
       if (alien.dying) {
         alien.deathTimer -= dt;
         if (alien.deathTimer <= 0) {
+          sounds.invaderDead.currentTime = 0;
+          sounds.invaderDead.play();
           alien.alive = false;
           alien.dying = false;
         }
@@ -376,6 +433,7 @@ class AlienGrid {
   drawAliensOnCanvas() {
     for (let alien of this.aliens) {
       if (alien.alive) {
+        alien.updateBounding();
         alien.drawEntityOnCanvas();
       }
     }
@@ -399,60 +457,36 @@ function valueInRange(value, min, max) {
 }
  
 // aabb collision detection allows edge contact when in range
+// Used clipRect to get more accurate size (size used to draw image)
 function isColliding(a, b) {
   return (
-    a.position.x <= b.position.x + b.img.width &&
-    a.position.x + a.img.width >= b.position.x &&
-    a.position.y <= b.position.y + b.img.height &&
-    a.position.y + a.img.height >= b.position.y
+    a.position.x <= b.position.x + b.clipRect.width &&
+    a.position.x + a.clipRect.width >= b.position.x &&
+    a.position.y <= b.position.y + b.clipRect.height &&
+    a.position.y + a.clipRect.height >= b.position.y
   );
 }
 
-function checkPlayerBulletsVsAliens() {
-  // uses let .. of ... to return objects
-  // let ... in ... returns indices
-  for (let bullet of player.bullets) {
-    for (let alien of aliens.aliens) {
-      if (bullet.alive && alien.alive && isColliding(bullet, alien)) {
-        player.score += alien.points;
-        alien.dying = true;
-        alien.deathTimer = 0.5;
-        alien.img = ENEMY_DEATH_IMAGE;
-        bullet.alive = false;
-      }
+function drawDebugBox(entity, color = 'red') {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.strokeRect(entity.position.x, entity.position.y, entity.clipRect.width, entity.clipRect.height);
+  ctx.restore();
+}
+
+function fadeInSound(audio, duration = 2000) {
+  audio.volume = 0;
+  audio.play();
+  const step = 0.01;
+  const interval = duration / (1 / step);
+
+  const fade = setInterval(() => {
+    if (audio.volume < 0.3) {
+      audio.volume += step;
+    } else {
+      clearInterval(fade);
     }
-  }
-}
-
-
-function checkAlienBulletsVsPlayer() {
-  if (player.lives <= 0) return;
-
-  for (let laser of alienLasers) {
-    if (player.lives > 0 && isColliding(laser, player)) {
-      player.lives -= 1;
-      player.dying = true;
-      player.deathTimer = 0.5;
-      player.img = PLAYER_DEATH_IMAGE
-      laser.alive = false;
-      break;
-    } 
-  }
-}
-
-function checkPlayerVsAliens() {
-  for (let alien of aliens.aliens) {
-    const collided = isColliding(alien, player);
-    if (collided) {
-      // game over - game over should have reset
-    }
-  }
-}
-
-function collisionDetection(dt) {
-  checkPlayerBulletsVsAliens(dt);
-  checkAlienBulletsVsPlayer();
-  checkPlayerVsAliens();
+  }, interval)
 }
 
 
@@ -477,90 +511,159 @@ function resizeCanvas() {
 }
 
 
-function drawGameBoard() {
-  if (!gameStarted && keys['Enter']) {
-    gameStarted = true;
-    document.getElementById('start-screen').style.display = 'none';
-    player = new Player(PLAYER_SPRITE_IMG);
-    aliens = new AlienGrid(50, 0, 5, 15, 40)
+class Game {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.state = 'loading';
+    this.lastTime = 0;
+    this.player = null;
+    this.aliens = null;
+    this.currentLevel = 1;
+    this.canShoot = true;
+    this.currentLevelIndex = 0;
+    this.levelTimer = 0;
   }
 
-  if (gameStarted && player) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  init() {
+    this.canvas.width = CANVAS_WIDTH;
+    this.canvas.height = CANVAS_HEIGHT;
+    this.player = new Player(images.player);
+    this.aliens = new AlienGrid(50, 0, 5, 15, 40);
+    this.state = 'playing';
+    requestAnimationFrame(this.loop.bind(this));
+  }
 
-    player.drawEntityOnCanvas();  
-    player.drawBullets();
-    aliens.drawAliensOnCanvas();
+  update(timeStamp, dt) {
+    if (!gameStarted) return;
 
+    this.player.movement(dt);
+    this.player.updateBullets(dt)
+    this.player.movement(dt);
+    this.aliens.update(timeStamp, dt);
+    this.collisionDetection(dt);
+    this.updateLevel(dt);
+  }
 
+  draw() {
+    this.clearScreen();
+    if (!gameStarted) return;
+    document.getElementById('start-screen').style.display = 'none';
+    sounds.background.loop = true;
+    sounds.background.play();
+    this.player.drawEntityOnCanvas();  
+    this.player.drawBullets();
+    this.aliens.drawAliensOnCanvas();
     for (let bullet of alienLasers) {
       bullet.drawEntityOnCanvas();
     }
-
-  }
-}
-
-
-function updateGame(timeStamp, dt) {
-  if (player) {
-    player.movement(dt);
-    player.updateBullets(dt)  
   }
 
-  if (aliens) {
-    aliens.update(timeStamp, dt)
+  loop() {
+    const timeStamp = performance.now();
+    const deltaTime = (timeStamp - this.lastTime) / 1000;
+    this.lastTime = timeStamp;
+
+    this.update(timeStamp, deltaTime);
+    this.draw();
+    requestAnimationFrame(this.loop.bind(this));
   }
 
-  if (player && aliens) collisionDetection(dt);
+  handleInput(e) {
+    if (e.code === 'Enter') gameStarted = true;
+    if (e.code === "Space" && this.canShoot && this.player) {
+      const now = performance.now();
+      if (now - this.player.lastShotTime >= 300) {
+        this.player.shoot();
+        sounds.shoot.currentTime = 0;
+        sounds.shoot.play();
+        this.player.lastShotTime = now;
+        this.canShoot = false;
+      }
+    }
 
-}
+    keys[e.key] = true;
+  }
 
-function gameLoop() {
-  const timeStamp = performance.now();
-  const deltaTime = (timeStamp - lastTime) / 1000;
-  lastTime = timeStamp;
+  handleKeyUp(e) {
+    if (e.code === 'Space') {
+      this.canShoot = true;
 
-  updateGame(timeStamp, deltaTime);
 
-  drawGameBoard()
+    }
+    keys[e.key] = false;
+  }
 
-  requestAnimationFrame(gameLoop); 
-}
+  clearScreen() {
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+  }
 
-document.addEventListener("keydown", (e) => {
-  // Moved shooting mechanic in here 
-  // because shoot didn't need to be called in `player.movement`
-  // too many function calls
-  if (e.code === "Space" && canShoot && player) {
-    const now = performance.now();
-    if (now - player.lastShotTime >= 300) {
-      player.shoot();
-      player.lastShotTime = now;
-      canShoot = false;
+  updateLevel(dt) {
+    this.levelTimer += dt;
+    const level = levels[this.currentLevel];
+    this.aliens.setSpeed(level.alienSpeed);
+  
+    if (this.levelTimer >= level.duration) {
+      if (this.currentLevel < levels.length - 1) {
+        this.currentLevel++;
+        this.levelTimer = 0;
+      }
     }
   }
 
-  keys[e.key] = true;
-});
+  checkPlayerBulletsVsAliens() {
+    // uses let .. of ... to return objects
+    // let ... in ... returns indices
+    for (let bullet of this.player.bullets) {
+      for (let alien of this.aliens.aliens) {
+        if (bullet.alive && alien.alive && isColliding(bullet, alien)) {
+          this.player.score += alien.points;
+          alien.dying = true;
+          alien.deathTimer = 0.5;
+          alien.img = images.enemyDeath;
+          bullet.alive = false;
+        }
+      }
+    }
+  }
+  
+  
+  checkAlienBulletsVsPlayer() {
+    if (this.player.lives <= 0) return;
 
-document.addEventListener("keyup", (e) => {
-  if (e.code === "Space" && player) {
-    canShoot = true;
+    for (let laser of alienLasers) {
+      if (this.player.lives > 0 && isColliding(laser, this.player)) {
+        sounds.playerDead.currentTime = 0;
+        sounds.playerDead.play();
+        this.player.lives -= 1;
+        this.player.dying = true;
+        this.player.deathTimer = 0.5;
+        this.player.img = images.playerDeath;
+        laser.alive = false;
+        break;
+      } 
+    }
+  }
+  
+  checkPlayerVsAliens() {
+    for (let alien of this.aliens.aliens) {
+      const collided = isColliding(alien, this.player);
+      if (collided) {
+        // game over - game over should have reset
+      }
+    }
   }
 
-  keys[e.key] = false;
-});
-
-  
-function initCanvas() {
-  canvas = document.getElementById('game-screen');
-  canvas.width = CANVAS_WIDTH;
-  canvas.height = CANVAS_HEIGHT;
-  ctx = canvas.getContext('2d');   
-  window.addEventListener('resize', resizeCanvas);
+  collisionDetection(dt) {
+    this.checkPlayerBulletsVsAliens(dt);
+    this.checkAlienBulletsVsPlayer();
+    this.checkPlayerVsAliens();
+  }
 }
 
-window.onload = function() {
-  initCanvas();
-  requestAnimationFrame(gameLoop)
-};
+const canvas = document.getElementById('game-screen');
+const game = new Game(canvas);
+var ctx = canvas.getContext('2d');
+
+window.onload = () => game.init();
+document.addEventListener('keydown', (e) => game.handleInput(e));
+document.addEventListener('keyup', (e) => game.handleKeyUp(e));
