@@ -1,3 +1,7 @@
+import * as Utils from './utils.mjs';
+
+const { clamp, isColliding } = Utils;
+
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
 
@@ -11,13 +15,20 @@ const createImage = (src) => {
   return img;
 }
 
+const ALIEN_IMAGE_TYPE_5 = createImage('./assets/images/enemy-one-down.svg');
+const ALIEN_IMAGE_TYPE_4 = createImage('./assets/images/enemy-two-down.svg');
+const ALIEN_IMAGE_TYPE_3 = createImage('./assets/images/enemy-three-down.svg');
+const ALIEN_IMAGE_TYPE_2 = createImage('./assets/images/enemy-three.svg');
+const ALIEN_IMAGE_TYPE_1 = createImage('./assets/images/enemy-two.svg');
+
 const ALIEN_IMAGES = [
-  ALIEN_IMAGE_TYPE_5 = createImage('./assets/images/enemy-one-down.svg'),
-  ALIEN_IMAGE_TYPE_4 = createImage('./assets/images/enemy-two-down.svg'),
-  ALIEN_IMAGE_TYPE_3 = createImage('./assets/images/enemy-three-down.svg'),
-  ALIEN_IMAGE_TYPE_2 = createImage('./assets/images/enemy-three.svg'),
-  ALIEN_IMAGE_TYPE_1 = createImage('./assets/images/enemy-two.svg'),
+  ALIEN_IMAGE_TYPE_5,
+  ALIEN_IMAGE_TYPE_4,
+  ALIEN_IMAGE_TYPE_3,
+  ALIEN_IMAGE_TYPE_2,
+  ALIEN_IMAGE_TYPE_1,
 ];
+
 
 const ALIEN_POINTS = [50, 40, 30, 20, 10];
 
@@ -439,77 +450,6 @@ class AlienGrid {
     }
   }
 }
-
-function isMobile() {
-  return window.innerWidth <= 768;
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(value, max));
-}
-
-function getRandomNumber(min, max) {
-  return Math.floor(Math.random() * (max - min + 10)) + min;
-}
-
-function valueInRange(value, min, max) {
-  return (value <= max) && (value >= min);
-}
- 
-// aabb collision detection allows edge contact when in range
-// Used clipRect to get more accurate size (size used to draw image)
-function isColliding(a, b) {
-  return (
-    a.position.x <= b.position.x + b.clipRect.width &&
-    a.position.x + a.clipRect.width >= b.position.x &&
-    a.position.y <= b.position.y + b.clipRect.height &&
-    a.position.y + a.clipRect.height >= b.position.y
-  );
-}
-
-function drawDebugBox(entity, color = 'red') {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.strokeRect(entity.position.x, entity.position.y, entity.clipRect.width, entity.clipRect.height);
-  ctx.restore();
-}
-
-function fadeInSound(audio, duration = 2000) {
-  audio.volume = 0;
-  audio.play();
-  const step = 0.01;
-  const interval = duration / (1 / step);
-
-  const fade = setInterval(() => {
-    if (audio.volume < 0.3) {
-      audio.volume += step;
-    } else {
-      clearInterval(fade);
-    }
-  }, interval)
-}
-
-
-  
-function changeStartTextOnScreenSize() {
-  const startParagraph = document.querySelector('#start-screen p');
-  if (isMobile() === true) {
-    startParagraph.textContent = 'Tap the screen to Play!'
-  } else {
-    startParagraph.textContent = 'Press Enter to Play!'
-  }
-}
-
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  changeStartTextOnScreenSize();
-  if (player) {
-    player.drawEntityOnResize();
-  }
-}
-
 
 class Game {
   constructor(canvas) {
