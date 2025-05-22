@@ -58,18 +58,24 @@ const { images, sounds, clipRect } = Assets;
 
 const levels = [
   {
+    id: 1,
+    name: 'Beginner',
     speedMultiplier: 1,
     alienCount: 5,
     alienSpeed: 50,
     duration: 30,
   },
   {
+    id: 2,
+    name: 'Intermediate',
     speedMultiplier: 1.5,
     alienCount: 8,
     alienSpeed: 80,
     duration: 45,
   },
   {
+    id: 3,
+    name: 'Advanced',
     speedMultiplier: 2,
     alienCount: 12,
     alienSpeed: 110,
@@ -454,13 +460,12 @@ class AlienGrid {
 class Game {
   constructor(canvas) {
     this.canvas = canvas;
-    this.state = 'loading';
+    this.state = GameStates.LOADING;
     this.lastTime = 0;
     this.player = null;
     this.aliens = null;
-    this.currentLevel = 1;
     this.canShoot = true;
-    this.currentLevelIndex = 0;
+    this.currentLevel = 1;
     this.levelTimer = 0;
   }
 
@@ -469,27 +474,30 @@ class Game {
     this.canvas.height = CANVAS_HEIGHT;
     this.player = new Player(images.player);
     this.aliens = new AlienGrid(50, 0, 5, 15, 40);
-    this.state = 'playing';
     requestAnimationFrame(this.loop.bind(this));
   }
 
   update(timeStamp, dt) {
-    if (!gameStarted) return;
-
-    this.player.movement(dt);
-    this.player.updateBullets(dt)
-    this.player.movement(dt);
-    this.aliens.update(timeStamp, dt);
-    this.collisionDetection(dt);
-    this.updateLevel(dt);
+    if (!gameStarted && this.state !== GameStates.PLAYING) return;
+    if (this.state == GameStates.PLAYING) {
+      this.player.movement(dt);
+      this.player.updateBullets(dt)
+      this.player.movement(dt);
+      this.aliens.update(timeStamp, dt);
+      this.collisionDetection(dt);
+      this.updateLevel(dt);
+    }
   }
 
   draw() {
     this.clearScreen();
-    if (!gameStarted) return;
-    document.getElementById('start-screen').style.display = 'none';
-    sounds.background.loop = true;
-    sounds.background.play();
+    if (this.state === GameStates.LOADING) return;
+    if (this.state === GameStates.PLAYING) {
+      sounds.background.loop = true;
+      sounds.background.play();
+    }
+    const startScreen = document.getElementById('start-screen');
+    startScreen.classList.remove('visible');  
     this.player.drawEntityOnCanvas();  
     this.player.drawBullets();
     this.aliens.drawAliensOnCanvas();
@@ -508,9 +516,50 @@ class Game {
     requestAnimationFrame(this.loop.bind(this));
   }
 
+  pause() {
+    const pauseScreen = document.getElementById('pause-screen');
+
+    if (this.state === GameStates.PLAYING && gameStarted) {
+      this.setState(GameStates.PAUSED);
+      pauseScreen.classList.add('visible');
+    } else if (this.state === GameStates.PAUSED) {
+      this.setState(GameStates.PLAYING);
+      pauseScreen.classList.remove('visible');
+    }
+  }
+
+  getState() {
+    return this.state;
+  }
+
+  setState(state) {
+    this.state = state
+  }
+
+  getMetaData() {
+    return {
+      name: 'Space Invaders',
+      author: 'Suleiman Suwaibat',
+      description: '',
+      thumbnail: '',
+      levels: 3,
+      version: '1.0.0'
+    }
+  }
+
   handleInput(e) {
-    if (e.code === 'Enter') gameStarted = true;
-    if (e.code === "Space" && this.canShoot && this.player) {
+
+    if (e.code === 'Escape') {
+      this.pause();
+      return;
+    }
+
+    if (e.code === 'Enter' && this.state !== GameStates.PAUSED) {
+        gameStarted = true;
+        this.setState(GameStates.PLAYING)
+    }
+
+    if (e.code === "Space" && this.canShoot && this.player && this.state === GameStates.PLAYING) {
       const now = performance.now();
       if (now - this.player.lastShotTime >= 300) {
         this.player.shoot();
@@ -521,6 +570,9 @@ class Game {
       }
     }
 
+  }
+
+  handleKeyDown(e) {
     keys[e.key] = true;
   }
 
@@ -598,6 +650,15 @@ class Game {
     this.checkAlienBulletsVsPlayer();
     this.checkPlayerVsAliens();
   }
+
+  gameOver() {
+    // Show player current score
+    // Create screen for high score
+    // Set player current score
+    // Allow player redirect with button
+    // Button will set state again
+    // reset everything, player, alienGrid, bullet will reset
+  }
 }
 
 const canvas = document.getElementById('game-screen');
@@ -605,5 +666,9 @@ const game = new Game(canvas);
 var ctx = canvas.getContext('2d');
 
 window.onload = () => game.init();
-document.addEventListener('keydown', (e) => game.handleInput(e));
+document.addEventListener('keydown', (e) => { 
+  game.handleInput(e);
+  game.handleKeyDown(e);
+});
+
 document.addEventListener('keyup', (e) => game.handleKeyUp(e));
