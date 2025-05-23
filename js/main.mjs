@@ -575,7 +575,7 @@ class Game {
         where the player controls a spaceship that moves 
         horizontally between boundaries to shoot at descending alien invaders. 
         The goal is to eliminate the aliens before they reach the bottom of the screen.`,
-      thumbnail: '',
+      thumbnail: './assets/game-screen-capture.jpeg',
       levels: 3,
       version: '1.0.0'
     }
@@ -654,6 +654,7 @@ class Game {
       for (let alien of this.aliens.aliens) {
         if (bullet.alive && alien.alive && isColliding(bullet, alien)) {
           this.player.score += alien.points;
+
           alien.dying = true;
           alien.deathTimer = 0.5;
           alien.img = images.enemyDeath;
