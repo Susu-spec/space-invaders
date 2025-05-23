@@ -14,6 +14,10 @@ export function valueInRange(value, min, max) {
     return (value <= max) && (value >= min);
 }
 
+export function easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
 // aabb collision detection allows edge contact when in range
 // Used clipRect to get more accurate size (size used to draw image)
 export function isColliding(a, b) {
