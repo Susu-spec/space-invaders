@@ -97,23 +97,6 @@ const GameStates = {
   GAME_OVER: 'gameOver'
 }
 
-let currentState = GameStates.LOADING;
-
-function updateGameState(newState) {
-  currentState = newState;
-  switch (currentState) {
-    case GameStates.LOADING:
-      break;
-    case GameStates.PLAYING:
-      break;
-    case GameStates.PAUSED:
-      break;
-    case GameStates.PAUSED:
-      break;
-  }
-}
-
-
 // needs pause and reset implementation
 
 class Position {
@@ -273,7 +256,21 @@ class Player extends AnimatedGameEntity {
   }
 
   drawEntityOnCanvas() {
+    ctx.save();
+    ctx.shadowColor = '#6F4E37';
+    ctx.shadowBlur = 15;
     ctx.drawImage(this.img, this.position.x, this.position.y, this.clipRect.width, this.clipRect.height);
+    ctx.restore();
+
+
+    ctx.save();
+    ctx.globalAlpha = 0.2;
+    const gradient = ctx.createLinearGradient(this.position.x, this.position.y, this.position.x + 20, this.position.y + 20);
+    gradient.addColorStop(0, '#6F4E37');
+    gradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(this.position.x, this.position.y, this.clipRect.width, this.clipRect.height);
+    ctx.restore();
   }
 
   updateBullets(dt) {
@@ -441,7 +438,7 @@ class AlienGrid {
       }
     
 
-      if(shouldStepDown) {
+      if (shouldStepDown) {
         alien.position.y += this.stepDown;
       } else {
         alien.position.x += xVelocity;
@@ -688,7 +685,7 @@ class Game {
     for (let alien of this.aliens.aliens) {
       const collided = isColliding(alien, this.player);
       if (collided) {
-        // game over - game over should have reset
+        this.gameOver();
       }
     }
   }
@@ -721,6 +718,7 @@ class Game {
     this.zooming = false;
     this.zoomTimer = 0;
     this.zoomLevel = 1;
+    alienLasers = [];
   }
 }
 
