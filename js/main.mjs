@@ -4,6 +4,11 @@ const { clamp, isColliding } = Utils;
 
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
+const CENTER_X = CANVAS_WIDTH / 2;
+const CENTER_Y = CANVAS_HEIGHT / 2;
+
+const ZOOM_DURATION = 1;
+const MAX_ZOOM = 1.5;
 
 let keys = {};
 let gameStarted = false;
@@ -467,6 +472,9 @@ class Game {
     this.canShoot = true;
     this.currentLevel = 1;
     this.levelTimer = 0;
+    this.zooming = false;
+    this.zoomTimer = 0;
+    this.zoomLevel = 1;
   }
 
   init() {
@@ -479,6 +487,7 @@ class Game {
 
   update(timeStamp, dt) {
     if (!gameStarted && this.state !== GameStates.PLAYING) return;
+
     if (this.state == GameStates.PLAYING) {
       this.player.movement(dt);
       this.player.updateBullets(dt)
@@ -492,17 +501,31 @@ class Game {
   draw() {
     this.clearScreen();
     if (this.state === GameStates.LOADING) return;
+
+    const startScreen = document.getElementById('start-screen');
+    startScreen.classList.remove('visible');  
+
     if (this.state === GameStates.PLAYING) {
       sounds.background.loop = true;
       sounds.background.play();
+
+      if (this.zooming) {
+        ctx.save();
+        ctx.translate(CENTER_X, CENTER_Y)
+        ctx.scale(this.zoomLevel, this.zoomLevel);
+        ctx.translate(-CENTER_X, -CENTER_Y)
+      }
     }
-    const startScreen = document.getElementById('start-screen');
-    startScreen.classList.remove('visible');  
+
     this.player.drawEntityOnCanvas();  
     this.player.drawBullets();
     this.aliens.drawAliensOnCanvas();
     for (let bullet of alienLasers) {
       bullet.drawEntityOnCanvas();
+    }
+
+    if (this.zooming && this.state === GameStates.PLAYING) {
+      ctx.restore();
     }
   }
 
@@ -512,6 +535,11 @@ class Game {
     this.lastTime = timeStamp;
 
     this.update(timeStamp, deltaTime);
+
+    if (this.zooming) {
+      this.updateZooming(deltaTime); 
+    }
+
     this.draw();
     requestAnimationFrame(this.loop.bind(this));
   }
@@ -540,7 +568,13 @@ class Game {
     return {
       name: 'Space Invaders',
       author: 'Suleiman Suwaibat',
-      description: '',
+      description: `
+        Space invaders is an interactive web-based game 
+        built with HTML, CSS and JavaScript.  
+        It’s a single-player arcade-style game 
+        where the player controls a spaceship that moves 
+        horizontally between boundaries to shoot at descending alien invaders. 
+        The goal is to eliminate the aliens before they reach the bottom of the screen.`,
       thumbnail: '',
       levels: 3,
       version: '1.0.0'
@@ -557,10 +591,12 @@ class Game {
     if (e.code === 'Enter' && this.state !== GameStates.PAUSED) {
         gameStarted = true;
         this.setState(GameStates.PLAYING)
+        this.zooming = true;
     }
 
     if (e.code === "Space" && this.canShoot && this.player && this.state === GameStates.PLAYING) {
       const now = performance.now();
+
       if (now - this.player.lastShotTime >= 300) {
         this.player.shoot();
         sounds.shoot.currentTime = 0;
@@ -569,7 +605,6 @@ class Game {
         this.canShoot = false;
       }
     }
-
   }
 
   handleKeyDown(e) {
@@ -579,8 +614,6 @@ class Game {
   handleKeyUp(e) {
     if (e.code === 'Space') {
       this.canShoot = true;
-
-
     }
     keys[e.key] = false;
   }
@@ -589,17 +622,29 @@ class Game {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
   }
 
+  updateZooming(dt) {
+    this.zoomTimer += dt;
+
+    if (this.zoomTimer >= ZOOM_DURATION) {
+      this.zooming = false;
+      this.zoomLevel = 1;
+    } else {
+      const t = this.zoomTimer / ZOOM_DURATION;
+      this.zoomLevel = 1 + (MAX_ZOOM - 1) * (1 - Math.pow(1 - t, 3));
+    }
+  }
+
   updateLevel(dt) {
     this.levelTimer += dt;
     const level = levels[this.currentLevel];
     this.aliens.setSpeed(level.alienSpeed);
   
-    if (this.levelTimer >= level.duration) {
-      if (this.currentLevel < levels.length - 1) {
-        this.currentLevel++;
-        this.levelTimer = 0;
-      }
-    }
+    // if (this.levelTimer >= level.duration) {
+    //   if (this.currentLevel < levels.length - 1) {
+    //     this.currentLevel++;
+    //     this.levelTimer = 0;
+    //   }
+    // }
   }
 
   checkPlayerBulletsVsAliens() {
@@ -626,10 +671,12 @@ class Game {
       if (this.player.lives > 0 && isColliding(laser, this.player)) {
         sounds.playerDead.currentTime = 0;
         sounds.playerDead.play();
+
         this.player.lives -= 1;
         this.player.dying = true;
         this.player.deathTimer = 0.5;
         this.player.img = images.playerDeath;
+
         laser.alive = false;
         break;
       } 
@@ -652,12 +699,27 @@ class Game {
   }
 
   gameOver() {
-    // Show player current score
-    // Create screen for high score
-    // Set player current score
-    // Allow player redirect with button
-    // Button will set state again
-    // reset everything, player, alienGrid, bullet will reset
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const scoreTracker = document.getElementById('score');
+
+    gameOverScreen.classList.add('visible');
+    scoreTracker.innerHTML += this.player.score;
+    
+
+  //  reset should only happen after you click on a button
+  }
+
+  reset() {
+    this.state = GameStates.LOADING;
+    this.lastTime = 0;
+    this.player = null;
+    this.aliens = null;
+    this.canShoot = true;
+    this.currentLevel = 1;
+    this.levelTimer = 0;
+    this.zooming = false;
+    this.zoomTimer = 0;
+    this.zoomLevel = 1;
   }
 }
 
