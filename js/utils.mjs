@@ -99,3 +99,59 @@ export function resizeCanvas() {
         player.drawEntityOnResize();
     }
 }
+
+export function handlePlayerBulletsAlienCollision(bullets, aliens, player, alienDeadImage) {
+    // uses let .. of ... to return objects
+    // let ... in ... returns indices
+    for (let bullet of bullets) {
+        for (let alien of aliens) {
+            if (bullet.alive && alien.alive && isColliding(bullet, alien)) {
+                player.score += alien.points;
+
+ 
+                alien.dying = true;
+                alien.deathTimer = 0.5;
+                alien.img = alienDeadImage;
+                bullet.alive = false;
+            }
+        }
+    }
+}
+
+export function handleAlienLasersPlayerCollision(lasers, player, playerDeadSound, playerDeadImage) {
+    if (player.lives <= 0) return;
+
+    for (let laser of lasers) {
+        if (!player.invincible && player.lives > 0 && isColliding(laser, player)) {
+            playerDeadSound.currentTime = 0;
+            playerDeadSound.play();
+
+            player.lives -= 1;
+            player.dying = true;
+            player.deathTimer = 0.5;
+            player.invincible = true;
+            player.invincibleTimer = 2;
+            player.img = playerDeadImage;
+
+            laser.alive = false;
+            break;
+        }
+    }
+}
+
+export function handleAliensPlayerCollision(aliens) {
+    let lowestY = 0;
+
+    for (let alien of aliens) {
+        if (alien.alive && alien.position.y > lowestY) {
+            lowestY = alien.position.y;
+        }
+    }
+    return lowestY;
+}
+
+export function triggerGameOver(game, sounds) {
+    game.setState('gameOver');
+    sounds.playerDead.play();
+    game.gameOver();
+}
