@@ -258,7 +258,7 @@ class Game {
   }
 
   updateLevel() {
-    const level = levels[this.currentLevel];
+    const level = levels[this.currentLevel - 1];
     const CONSTANT_SCORE = 500;
     const expectedScore = this.currentLevel * CONSTANT_SCORE;
 
@@ -269,6 +269,7 @@ class Game {
       this.currentLevel++;
       this.zooming = true;
   
+
       this.aliens.setSpeed(this.aliens.speed + level.alienSpeed);
       this.aliens.updateSpacing(level.spacing);
     }
