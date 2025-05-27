@@ -9,10 +9,6 @@
  * 
  */
 
-import { AlienGrid } from "./alien.mjs";
-import { Bullet, Laser } from "./bullets.mjs";
-import { Player } from "./player.mjs";
-
 
 /**
  * Loads an image and resolves when it's ready.
@@ -23,6 +19,7 @@ import { Player } from "./player.mjs";
 export const createImage = (src) => {
     return new Promise((resolve, reject) => {
         const img = new Image();
+
         img.onload = () => resolve(img);
         img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
         img.src = src;
