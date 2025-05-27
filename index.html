@@ -1,3 +1,22 @@
+<!-- 
+ File: index.html
+ Game: Space Invaders
+ Author: Suwayba
+ Date: 2025-05-27
+ 
+ Description: 
+ This file contains the main html structure for the Space Invaders game,
+ including screens for game conditions such as,
+ startup, pause, game area, level up and game over screens
+
+ Dependencies:
+ - main.mjs: Core game logic
+ - main.css: Game-specific styles
+
+ Other dependencies are found in the css/design-system and js/utils folders
+
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,12 +65,15 @@
 
     <!-- Game Area: Contains canvas element -->
     <section aria-label="Game Area">
-      <!-- Game board and all game elements are drawn here -->
+      <!-- Game canvas: All game elements are drawn here -->
       <canvas id="game-screen"></canvas>
     </section>
 
 
-    <!-- Pause screen: Contains Pause screen ui -->
+    <!-- 
+    Pause screen: Contains Pause screen ui
+    Controlled on desktop by esc key
+      -->
     <section 
       aria-label="Pause Screen" 
       id="pause-screen" 
