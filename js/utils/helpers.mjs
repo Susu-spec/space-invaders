@@ -9,6 +9,11 @@
  * 
  */
 
+import { AlienGrid } from "./alien.mjs";
+import { Bullet, Laser } from "./bullets.mjs";
+import { Player } from "./player.mjs";
+
+
 /**
  * Loads an image and resolves when it's ready.
  * 
@@ -163,9 +168,9 @@ export function resizeCanvas() {
  * If a collision occurs, the alien is marked as dying and the bullet is destroyed.
  * The player's score increases based on the alien's point value.
  *
- * @param {Array<GameEntity>} bullets - Array of active bullets fired by the player.
- * @param {Array<AnimatedGameEntity>} aliens - Array of active alien enemies.
- * @param {Player} player - The player object with score and game state.
+ * @param {Array<Bullet>} bullets - Array of active bullets fired by the player.
+ * @param {Array<AlienGrid>} aliens - Array of active alien enemies.
+ * @param {Object<Player>} player - The player object with score and game state.
  * @param {HTMLImageElement} alienDeadImage - The image to show when an alien dies.
 */
 
@@ -195,8 +200,8 @@ export function handlePlayerBulletsAlienCollision(bullets, aliens, player, alien
  * 4. Execute and break out of the loop
  * @property invincible is set to avoid lives being lost in a very short time frame
  * 
- * @param {Array<GameEntity>} lasers - Array of active lasers fired by the aliens.
- * @param {Array<AnimatedGameEntity>} aliens - Array of active alien enemies.
+ * @param {Array<Laser>} lasers - Array of active lasers fired by the aliens.
+ * @param {Array<AlienGrid>} aliens - Array of active alien enemies.
  * @param {Object<Player>} player - The player object with score and game state.
  * @param {HTMLAudioElement} playerDeadSound - The sound played when a player dies
  * @param {HTMLImageElement} playerDeadImage - The image to show when a player dies.
@@ -235,7 +240,7 @@ export function handleAlienLasersPlayerCollision(lasers, player, playerDeadSound
  * 3. check if its vertical position is greater than the lowest y position set
  * 4. Loop until the largest y position (y increases downwards because starts at top left)
  * 
- * @param {Array} aliens 
+ * @param {Array<AlienGrid>} aliens - Array of active aliens
  * @returns {number}
  */
 
