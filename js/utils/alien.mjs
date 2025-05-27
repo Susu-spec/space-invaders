@@ -154,13 +154,12 @@ export class AlienGrid {
         let xVelocity = this.speed * this.direction * dt;
         let shouldStepDown = false;
 
-
         for (let alien of this.aliens) {
             if (alien.alive === false) continue;
 
             const nextXPosition = alien.position.x + xVelocity;
 
-            if (nextXPosition <= 50 || nextXPosition + (alien.img.width >= CANVAS_WIDTH - 50)) {
+            if (nextXPosition <= 50 ||( nextXPosition + alien.img.width) >= CANVAS_WIDTH - 50) {
                 shouldStepDown = true;
                 this.direction *= -1;
                 break;

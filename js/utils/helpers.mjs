@@ -1,4 +1,15 @@
 /**
+ * @file utils/helpers.mjs
+ * @game Space Invaders
+ * @author Suwayba
+ * @date 2025-05-27
+ * 
+ * @description 
+ * Logic for helper functions used across files
+ * 
+ */
+
+/**
  * Loads an image and resolves when it's ready.
  * 
  * @param {string} src - Path to image
@@ -34,6 +45,7 @@ export function clamp(value, min, max) {
     return Math.max(min, Math.min(value, max));
 }
 
+
 /**
  * 
  * @param {number} min - Minimum value to randomize within
@@ -44,6 +56,7 @@ export function clamp(value, min, max) {
 export function getRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 10)) + min;
 }
+
 
 /**
  * 
