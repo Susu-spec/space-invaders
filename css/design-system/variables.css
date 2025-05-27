@@ -2,9 +2,10 @@
     --color-primary: #000000;
     --color-secondary: #ffffff;
     --color-bg-primary: #0a0a0a;
+    --accent-color: #00ffff;
     --font-primary: 'Raster Forge Regular', sans-serif;
-    --font-secondary: 'Play', sans-serif;
-    --spacing-small: .75rem;
+    --font-secondary: 'Press Start 2P', monospace;
+    --spacing-small: .5rem;
     --spacing-medium: 1rem;
     --spacing-large: 1.5rem;
 }

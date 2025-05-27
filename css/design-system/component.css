@@ -1,24 +1,51 @@
 .enemy {
-    position: absolute;
-    top: 60px;
-    left: 140px;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(to bottom right, #00ffff, #0066ff);
-    border-radius: 10%;
-    box-shadow: 0 0 12px #00f, 0 0 25px #0ff;
-    animation: pulse 1s infinite ease-in-out;
-  }
+  position: absolute;
+  top: 60px;
+  left: 140px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(to bottom right, #00ffff, #0066ff);
+  border-radius: 10%;
+  box-shadow: 0 0 12px #00f, 0 0 25px #0ff;
+  animation: pulse 1s infinite ease-in-out;
+}
   
-  .player {
-    position: absolute;
-    bottom: 20px;
-    left: 170px;
-    width: 40px;
-    height: 40px;
-    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-    background: linear-gradient(to top left, #ff00ff, #ff0077);
-    box-shadow: 0 0 10px #f0f, 0 0 20px #f0f, 0 0 40px #f0f;
-    animation: pulse 0.8s infinite alternate;
-  }
+.player {
+  position: absolute;
+  bottom: 20px;
+  left: 170px;
+  width: 40px;
+  height: 40px;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  background: linear-gradient(to top left, #ff00ff, #ff0077);
+  box-shadow: 0 0 10px #f0f, 0 0 20px #f0f, 0 0 40px #f0f;
+  animation: pulse 0.8s infinite alternate;
+}
+
+
+.loader {
+  margin: auto;
+  width: 50px;
+  height: 50px;
+  background-color: #FF5C35;
+  animation: spin 2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+}
+
+.btn-link {
+  cursor: pointer;
+  margin-top: var(--spacing-medium);
+}
+
+.btn-link:hover {
+  color: var(--accent-color);
+}
+
+.visible {
+  display: flex !important;
+  opacity: 1 !important;
+}
+
+.rotate-90 {
+  transform: rotate(90);
+}
   
