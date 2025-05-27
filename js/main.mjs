@@ -18,7 +18,6 @@ const startScreen = document.getElementById('start-screen');
 
 let keys = {};
 let gameStarted = false;
-var spacing = 30;
 
 const createImage = (src) => {
   const img = new Image();
@@ -809,8 +808,6 @@ class Game {
  
     sounds.gameOverSound.play();
     playAgain.onclick = () => this.reset();
-
-    //  reset should only happen after you click on a button
   }
 
   reset() {
@@ -819,25 +816,22 @@ class Game {
     gameOverScreen.classList.remove('visible');
     loading.classList.add('visible');
   
-    setTimeout(() => {
- 
-   
-    loading.classList.remove('visible');
+    setTimeout(() => {  
+      loading.classList.remove('visible');
 
-    // Reset game state
-    this.state = GameStates.LOADING;
-    this.lastTime = 0;
-    this.player = null;
-    this.aliens = null;
-    this.canShoot = true;
-    this.currentLevel = 1;
-    this.levelTimer = 0;
-    this.zooming = false;
-    this.zoomTimer = 0;
-    this.zoomLevel = 1;
-    this.alienLasers = [];
+      this.state = GameStates.LOADING;
+      this.lastTime = 0;
+      this.player = null;
+      this.aliens = null;
+      this.canShoot = true;
+      this.currentLevel = 1;
+      this.levelTimer = 0;
+      this.zooming = false;
+      this.zoomTimer = 0;
+      this.zoomLevel = 1;
+      this.alienLasers = [];
 
-    this.init();
+      this.init();
     }, 500); 
   }
   
