@@ -3,8 +3,8 @@ Space invaders is an interactive web-based game built with HTML, CSS and JavaScr
 
 A re-imagining of the original 1978 arcade game of the same name by Tomohiro Nishikado released by the Taito corporation.
 
-![Space Invaders Screenshot]('./assets/images/screenshots/space-invaders-screenshot.jpeg')
-![Space Invaders Gameplay]('./assets/images/screenshots/space-invaders-gameplay.jpeg)
+![Space Invaders Screenshot]('/assets/images/screenshots/space-invaders-screenshot.jpeg')
+![Space Invaders Gameplay]('/assets/images/screenshots/space-invaders-gameplay.jpeg)
 
 ## Game Features
 
