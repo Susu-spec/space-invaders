@@ -13,27 +13,87 @@
     <meta name="theme-color" content="#000000">
     <meta name="robots" content="index, follow">
     
-    <link rel="icon" href="./images/favicon.ico" type="image/x-icon"> 
+    <link rel="icon" href="./assets/images/favicon.ico" type="image/x-icon"> 
     <link rel="stylesheet" type="text/css" href="./css/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Initial screen to introduce player -->
-  <!-- Play screen -->
-  <!-- High score screen -->
   <main>
-  <section id="start-screen" aria-label="Welcome Screen">
-    <h1>Space Invaders</h1>
-    <p>Press Enter to play!</p>
-  </section>
-  <section aria-label="Game Area">
-    <canvas id="game-screen"></canvas>
-  </section>
-  <section aria-label="High Score Screen" id="high-score-screen">
-  </section>
+
+    <!-- Game start screen: Contains Gameplay start visual -->
+    <section 
+      id="start-screen" 
+      class="visible" 
+      aria-label="Welcome Screen"
+    >
+      <h1>Space Invaders</h1>
+      <p class="text-md blink">Press Enter to play!</p>
+      <div class="text-xs" id="credits">
+        <p>------</p>
+        <p>Arrow keys to move </p> 
+        <p>Space to shoot</p> 
+        <p>Esc to pause</p>
+        <p>------</p>
+        <p>2025 by Suwayba</p>
+        <p>Built with HTML5, CSS and JS.</p>
+        <p>All code on Github: https://github.com/Susu-spec/space-invaders</p>
+      </div>
+    </section>
+
+
+    <!-- Game Area: Contains canvas element -->
+    <section aria-label="Game Area">
+      <!-- Game board and all game elements are drawn here -->
+      <canvas id="game-screen"></canvas>
+    </section>
+
+
+    <!-- Pause screen: Contains Pause screen ui -->
+    <section 
+      aria-label="Pause Screen" 
+      id="pause-screen" 
+      class="ui-overlay text-lg font-secondary"
+    >
+      <h1>Space Invaders</h1>
+      <p class="text-md">Press Esc to continue</p>
+    </section>
+
+
+    <!-- Level up screen: Contains level up prompt -->
+    <section 
+      aria-label="Level-up Screen" 
+      id="level-up-screen" 
+      class="ui-overlay text-lg font-secondary"
+    >
+      <h1>Invaders are closing in!</h1>
+    </section>
+
+
+    <!-- Loading screen: Contains loading screen -->
+    <section 
+      aria-label="Loading Screen" 
+      id="loading-screen" 
+      class="ui-overlay text-lg font-secondary"
+    >
+      <div class="loading"></div>
+    </section>
+
+
+    <!-- Game over screen: Contains game over and restart prompt -->
+    <section 
+      aria-label="Game Over Screen" 
+      id="game-over-screen" 
+      class="ui-overlay text-lg font-secondary"
+    >
+      <h1>Game over!</h1>
+      <p id="score" class="text-md">Your score:</p>
+      <p id="play-again-link" class="text-md btn-link">Play again?</p>
+    </section>
   </main>
-  <script src="./js/main.js"></script>
+  <script type="module" src="./js/main.mjs"></script>
+  <script type="module" src="./js/utils.mjs"></script>
 </body>
 </html>
