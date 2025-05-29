@@ -45,12 +45,12 @@
     <!-- Game start screen: Contains Gameplay start visual -->
     <section 
       id="start-screen" 
-      class="visible" 
+      class="visible start-screen" 
       aria-label="Welcome Screen"
     >
-      <h1>Space Invaders</h1>
-      <p class="text-md blink">Press Enter to play!</p>
-      <div class="text-xs" id="credits">
+      <h1 class="text-lgr">Space Invaders</h1>
+      <p class="text-md warm-brown">Press Enter to play!</p>
+      <div class="text-xs credits text-shadow-dark" id="credits">
         <p>------</p>
         <p>Arrow keys to move </p> 
         <p>Space to shoot</p> 
@@ -66,7 +66,7 @@
     <!-- Game Area: Contains canvas element -->
     <section aria-label="Game Area">
       <!-- Game canvas: All game elements are drawn here -->
-      <canvas id="game-screen"></canvas>
+      <canvas class="canvas" id="game-screen"></canvas>
     </section>
 
 
@@ -79,8 +79,8 @@
       id="pause-screen" 
       class="ui-overlay text-lg font-secondary"
     >
-      <h1>Space Invaders</h1>
-      <p class="text-md">Press Esc to continue</p>
+      <h1 class="text-lgr">Space Invaders</h1>
+      <p class="text-md warm-brown">Press Esc to continue</p>
     </section>
 
 
