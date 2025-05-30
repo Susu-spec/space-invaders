@@ -56,6 +56,7 @@ class Game {
     this.zoomTimer = 0;
     this.zoomLevel = 1;
     this.particles = null;
+    this.highScore = localStorage.getItem('highScore') ?? 0;
 
   }
 
@@ -74,7 +75,8 @@ class Game {
     if (!gameStarted && this.state !== GameStates.PLAYING) return;
 
     if (this.player.lives === 0 && this.state !== GameStates.GAME_OVER) {
-      this.setState(GameStates.GAME_OVER)
+      this.setState(GameStates.GAME_OVER);
+      this.saveScore();
       this.gameOver();
     }
 
@@ -110,7 +112,7 @@ class Game {
       const yOffset = 20;
       ctx.drawImage(images.player, xOffset, yOffset, 25, 20);
     }
-
+    this.saveScore();
     this.drawScore();
     this.particles.drawParticles(ctx);
     if (this.zooming && this.state === GameStates.PLAYING) {
@@ -209,6 +211,9 @@ class Game {
     ctx.font = "1rem 'Press Start 2P', monospace";
     ctx.fillStyle = gradient;
     ctx.fillText(`Score: ${this.player.score}`, CANVAS_WIDTH - 200, 40);
+    ctx.fillText(`Level: ${this.currentLevel}`, CANVAS_WIDTH - 800, 40);
+    ctx.fillText(`High Score: ${this.highScore}`, CANVAS_WIDTH - 600, 40);
+
   }
 
   handleKeyDown(e) {
@@ -241,6 +246,7 @@ class Game {
   }
 
   updateZooming(dt) {
+    if (this.state !== GameStates.PLAYING) return;
     const levelUpScreen = document.getElementById('level-up-screen');
 
     this.zoomTimer += dt;
@@ -274,6 +280,17 @@ class Game {
       this.aliens.updateSpacing(level.spacing);
     }
   }
+
+  saveScore() {
+ 
+    if (
+      this.state === GameStates.GAME_OVER && 
+      this.player.score > this.highScore
+    ) {
+      this.highScore = this.player.score;
+      localStorage.setItem('highScore', this.highScore)
+    }
+  }
   
 
 
@@ -296,7 +313,6 @@ class Game {
   }
 
   gameOver() {
-
     gameOverScreen.classList.add('visible');
     scoreTracker.innerHTML = `Your Score: ${this.player.score}`;
 
