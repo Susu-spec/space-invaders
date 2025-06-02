@@ -9,6 +9,8 @@
  * 
  */
 
+import { VIRTUAL_HEIGHT, VIRTUAL_WIDTH } from "./constants.mjs";
+
 
 /**
  * Loads an image and resolves when it's ready.
@@ -263,4 +265,15 @@ export function triggerGameOver(game, sounds) {
     game.setState('gameOver');
     sounds.playerDead.play();
     game.gameOver();
+}
+
+
+export function updateScale(scale, canvasWidth, canvasHeight) {
+    let scaleValue = 1;
+
+    scale.x = canvasWidth / VIRTUAL_WIDTH;
+    scale.y = canvasHeight / VIRTUAL_HEIGHT;
+    scaleValue = Math.min(scale.x, scale.y);
+
+    return scaleValue;
 }

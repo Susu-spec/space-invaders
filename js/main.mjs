@@ -15,7 +15,8 @@ import {
   handlePlayerBulletsAlienCollision, 
   handleAliensPlayerCollision, 
   triggerGameOver, 
-  handleAlienLasersPlayerCollision 
+  handleAlienLasersPlayerCollision, 
+  updateScale
 } from './utils/helpers.mjs';
 import { Assets } from './utils/assets.mjs';
 import { levels } from './utils/levels.mjs';
@@ -25,13 +26,15 @@ import {
   startScreen, 
   playAgain, 
   GameStates,
-  CANVAS_HEIGHT, 
-  CANVAS_WIDTH, 
+  canvasSize,
   CENTER_X, 
   CENTER_Y, 
   ZOOM_DURATION, 
   MAX_ZOOM, 
-  keys
+  keys,
+  scale,
+  VIRTUAL_WIDTH,
+  VIRTUAL_HEIGHT,
 } from './utils/constants.mjs';
 import { Player } from './utils/player.mjs';
 import { AlienGrid } from './utils/alien.mjs';
@@ -45,6 +48,7 @@ class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.state = GameStates.LOADING;
+    this.scale = 1;
     this.lastTime = 0;
     this.player = null;
     this.aliens = null;
@@ -62,11 +66,11 @@ class Game {
 
   init() {
     startScreen.classList.add('visible');
-    this.canvas.width = CANVAS_WIDTH;
-    this.canvas.height = CANVAS_HEIGHT;
+    this.canvas.width = canvasSize.width;
+    this.canvas.height = canvasSize.height;
 
-    this.player = new Player(images.player, ctx);
-    this.aliens = new AlienGrid(ctx, 50, 40, 6, 18);
+    this.player = new Player(images.player, ctx, this.scale);
+    this.aliens = new AlienGrid(ctx, 0.05 * VIRTUAL_WIDTH, 0.04 * VIRTUAL_HEIGHT, 6, 18);
     this.particles = new Particles();
     requestAnimationFrame(this.start.bind(this));
   }
@@ -126,14 +130,14 @@ class Game {
 
     this.lastTime = timeStamp;
     this.update(timeStamp, deltaTime);
-    this.draw();
+    this.redraw(timeStamp, deltaTime);
     requestAnimationFrame(this.start.bind(this));
   }
 
   pause() {
     const pauseScreen = document.getElementById('pause-screen');
 
-    if (this.state === GameStates.PLAYING && gameStarted) {
+    if (this.state === GameStates.PLAYING) {
       this.setState(GameStates.PAUSED);
       pauseScreen.classList.add('visible');
     } else if (this.state === GameStates.PAUSED) {
@@ -176,7 +180,7 @@ class Game {
         return;
 
       case 'Enter':
-        if (this.state !== GameStates.PAUSED) {
+        if (this.state !== GameStates.PAUSED || this.state !== GameStates.GAME_OVER) {
           gameStarted = true;
           this.setState(GameStates.PLAYING);
         }
@@ -204,15 +208,18 @@ class Game {
   }
 
   drawScore() {
-    const gradient = ctx.createLinearGradient(CANVAS_WIDTH - 200, 40, (CANVAS_WIDTH - 200) + 150, 40);
+    const padding = 20 * this.scale;
+    const margin = 0.2 * VIRTUAL_WIDTH;
+
+    const gradient = ctx.createLinearGradient(VIRTUAL_WIDTH - (0.2 * VIRTUAL_WIDTH), 0.4 * VIRTUAL_HEIGHT, (VIRTUAL_WIDTH - 0.2 * VIRTUAL_WIDTH), 0.4 * VIRTUAL_HEIGHT);
     gradient.addColorStop(0, "#037070");
     gradient.addColorStop(1, '#00ffff');
 
-    ctx.font = "1rem 'Press Start 2P', monospace";
+    ctx.font = `${1 * this.scale}rem 'Press Start 2P', monospace`;
     ctx.fillStyle = gradient;
-    ctx.fillText(`Score: ${this.player.score}`, CANVAS_WIDTH - 200, 40);
-    ctx.fillText(`Level: ${this.currentLevel}`, CANVAS_WIDTH - 800, 40);
-    ctx.fillText(`High Score: ${this.highScore}`, CANVAS_WIDTH - 600, 40);
+    ctx.fillText(`Score: ${this.player.score}`, VIRTUAL_WIDTH - padding, padding * 2);
+    ctx.fillText(`Level: ${this.currentLevel}`, VIRTUAL_WIDTH - margin - padding, padding * 2);
+    ctx.fillText(`High Score: ${this.highScore}`, VIRTUAL_WIDTH - (margin * 2) - padding, padding * 2);
 
   }
 
@@ -228,7 +235,7 @@ class Game {
   }
 
   clearScreen() {
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
   }
 
   handleZoomStart() {
@@ -277,7 +284,7 @@ class Game {
   
 
       this.aliens.setSpeed(this.aliens.speed + level.alienSpeed);
-      this.aliens.updateSpacing(level.spacing);
+      this.aliens.updateSpacing(level.spacing * this.scale);
     }
   }
 
@@ -300,7 +307,7 @@ class Game {
 
     let lowestY = handleAliensPlayerCollision(aliens);
 
-    if (lowestY >= (CANVAS_HEIGHT + playerHeight)) {
+    if (lowestY >= (canvasSize.height + playerHeight)) {
       triggerGameOver(game, sounds);
     }
   }
@@ -324,14 +331,36 @@ class Game {
     playAgain.onclick = () => this.reset();
   }
 
+ redraw(timeStamp, dt) {
+
+
+    // Match drawing resolution to visible size
+    this.canvas.width = this.canvas.clientWidth;
+    this.canvas.height = this.canvas.clientHeight;
+
+    // Update globally accessible size
+    canvasSize.width = this.canvas.width;
+    canvasSize.height = this.canvas.height;
+
+     // Virtual resolution scale (preserves aspect ratio)
+      this.scale = updateScale(scale, this.canvas.width, this.canvas.height)
+
+      ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0); // Clear and apply scale
+
+    // Redraw everything based on new dimensions
+    this.draw();
+    this.update(timeStamp, dt)
+  }
+
   reset() {
     const loading = document.getElementById('loading-screen');
-  
-    gameOverScreen.classList.remove('visible');
-    loading.classList.add('visible');
+      loading.classList.add('visible');
+
+
   
     setTimeout(() => {  
       loading.classList.remove('visible');
+      gameOverScreen.classList.remove('visible');
 
       this.state = GameStates.LOADING;
       this.lastTime = 0;
@@ -354,11 +383,19 @@ class Game {
 const canvas = document.getElementById('game-screen');
 const game = new Game(canvas);
 var ctx = canvas.getContext('2d');
+const resizeObserver = new ResizeObserver(() => {
+  game.redraw();
+});
+
+resizeObserver.observe(canvas);
+
 
 window.onload = () => game.init();
 document.addEventListener('keydown', (e) => {
   game.handleInput(e);
   game.handleKeyDown(e);
 });
+
+
 
 document.addEventListener('keyup', (e) => game.handleKeyUp(e));

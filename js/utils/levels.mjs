@@ -23,7 +23,7 @@ export const levels = [
   {
     id: 1,
     name: 'Beginner',
-    alienSpeed: 40,
+    alienSpeed: 45,
     spacing: 35,
   },
   {
@@ -35,7 +35,7 @@ export const levels = [
   {
     id: 3,
     name: 'Advanced',
-    alienSpeed: 80,
+    alienSpeed: 90,
     spacing: 45,
   },
 ];

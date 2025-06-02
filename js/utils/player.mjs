@@ -13,7 +13,7 @@
 import AnimatedGameEntity from "./game-entity.mjs";
 import { clamp } from "./helpers.mjs";
 import { Assets } from "./assets.mjs";
-import { CANVAS_HEIGHT, CANVAS_WIDTH, keys } from "./constants.mjs";
+import { canvasSize, keys, VIRTUAL_HEIGHT, VIRTUAL_WIDTH } from "./constants.mjs";
 import { Bullet } from "./bullets.mjs";
 
 const { images, clipRect } = Assets;
@@ -32,13 +32,13 @@ export class Player extends AnimatedGameEntity {
    * @param {HTMLImageElement} img -  The image to show when a player is rendered
    * @param {CanvasRenderingContext2D} ctx - Canvas context initialized at entry file
    */
-  constructor(img, ctx) {
-    super(img, CANVAS_WIDTH / 2, CANVAS_HEIGHT - (clipRect.player.height / 2) - 10, clipRect.player)
+  constructor(img, ctx, scale) {
+    super(img, (VIRTUAL_WIDTH / 2), (VIRTUAL_HEIGHT - (clipRect.player.height / 2) - 10), clipRect.player)
     this.ctx = ctx;
     this.img = img;
     this.clipRect.width = this.img.width;
     this.clipRect.height = this.img.height;
-    this.xAccel = 100;
+    this.xAccel = 300;
     this.lives = 3;
     this.score = 0;
     this.bullets = [];
@@ -52,7 +52,7 @@ export class Player extends AnimatedGameEntity {
   reset() {
     this.lives = 3;
     this.score = 0;
-    this.position.set(CANVAS_WIDTH / 2, CANVAS_HEIGHT - (clipRect.player.height / 2) - 10);
+    this.position.set(canvasSize.width / 2, canvasSize.height - (clipRect.player.height / 2) - 10);
     this.bullets = []
     this.img = images.player;
   }
@@ -75,7 +75,8 @@ export class Player extends AnimatedGameEntity {
       }
     }
 
-    this.position.x = clamp(this.position.x, 50, CANVAS_WIDTH - this.img.width);
+    this.position.x = clamp(this.position.x, 50, canvasSize.width - 50);
+    
 
     if (keys['ArrowLeft']) {
       this.position.x -= this.xAccel * dt

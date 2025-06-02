@@ -13,7 +13,7 @@
 import { ALIEN_IMAGES, ALIEN_POINTS } from "./assets.mjs";
 import AnimatedGameEntity, { Position } from "./game-entity.mjs";
 import { Assets } from "./assets.mjs";
-import { CANVAS_WIDTH } from "./constants.mjs";
+import { canvasSize, VIRTUAL_WIDTH } from "./constants.mjs";
 import { Laser } from "./bullets.mjs";
 
 const { sounds, clipRect } = Assets;
@@ -48,9 +48,9 @@ export class Alien extends AnimatedGameEntity {
     }
 
     shoot(game) {
-        const laserX = this.position.x + clipRect.alien.width / 2;
-        const laserY = this.position.y + clipRect.alien.height;
-        const laser = new Laser(this.ctx, laserX, laserY, -1, 800);
+        const laserX = this.position.x + this.clipRect.width / 2;
+        const laserY = this.position.y + this.clipRect.height;
+        const laser = new Laser(this.ctx, laserX, laserY, -1, 500);
         game.alienLasers.push(laser);
     }
 
@@ -133,7 +133,7 @@ export class AlienGrid {
             )
 
             const shooter = columnAliens.sort((a, b) => b.position.y - a.position.y)[0]
-            const randomiser = (this.currentLevel > 1) ? 0.01 : 0.001;
+            const randomiser = (game.currentLevel > 1) ? 0.1 : 0.01;
 
             if (shooter && 
                 ((currentTime - shooter.lastShotTime) > shooter.shootCoolDown) && 
@@ -158,12 +158,15 @@ export class AlienGrid {
             if (alien.alive === false) continue;
 
             const nextXPosition = alien.position.x + xVelocity;
-
-            if (nextXPosition <= 50 ||( nextXPosition + alien.img.width) >= CANVAS_WIDTH - 50) {
-                shouldStepDown = true;
-                this.direction *= -1;
-                break;
-            }
+            console.log(nextXPosition >= VIRTUAL_WIDTH - 50)
+ 
+            if (
+            (this.direction === 1 && nextXPosition >= VIRTUAL_WIDTH - alien.clipRect.width) ||
+            (this.direction === -1 && nextXPosition <= 0)
+        ) {
+            shouldStepDown = true;
+            break;
+        }
         }
 
         for (let alien of this.aliens) {
@@ -180,12 +183,23 @@ export class AlienGrid {
                 }
             }
 
+//  alien.position.x += xVelocity;
+           if (shouldStepDown) {
+                this.direction *= -1;
 
-            if (shouldStepDown) {
-                alien.position.y += this.stepDown;
+ 
+
+                    alien.position.y += this.stepDown;
+                    console.log('stepping down')
+
             } else {
-                alien.position.x += xVelocity;
-            }
+
+  
+
+                    alien.position.x += xVelocity;
+                    console.log('moving horizontally')
+
+    }
         }
 
         this.updateShooting(currentTime, dt, game);
