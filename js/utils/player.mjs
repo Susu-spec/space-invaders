@@ -38,7 +38,7 @@ export class Player extends AnimatedGameEntity {
     this.img = img;
     this.clipRect.width = this.img.width;
     this.clipRect.height = this.img.height;
-    this.xAccel = 100;
+    this.xAccel = 300;
     this.lives = 3;
     this.score = 0;
     this.bullets = [];

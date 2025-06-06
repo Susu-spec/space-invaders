@@ -8,7 +8,7 @@ A re-imagining of the original 1978 arcade game of the same name by Tomohiro Nis
 
 ## Game Features
 
-- Three difficulty levels with increase in speed rate of aliens
+- Five difficulty levels with increase in speed rate of aliens spacing between aliens
 - Score tracking
 - Sound effects and background music
 

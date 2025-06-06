@@ -34,8 +34,20 @@ export const levels = [
   },
   {
     id: 3,
+    name: 'Upper Intermediate',
+    alienSpeed: 65,
+    spacing: 45,
+  },
+  {
+    id: 4,
+    name: 'Pre-advanced',
+    alienSpeed: 70,
+    spacing: 50,
+  },
+  {
+    id: 5,
     name: 'Advanced',
     alienSpeed: 80,
-    spacing: 45,
+    spacing: 55,
   },
 ];
