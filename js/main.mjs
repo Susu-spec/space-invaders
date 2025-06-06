@@ -31,7 +31,8 @@ import {
   CENTER_Y, 
   ZOOM_DURATION, 
   MAX_ZOOM, 
-  keys
+  keys,
+  gameOverTitle
 } from './utils/constants.mjs';
 import { Player } from './utils/player.mjs';
 import { AlienGrid } from './utils/alien.mjs';
@@ -47,7 +48,7 @@ class Game {
     this.state = GameStates.LOADING;
     this.lastTime = 0;
     this.player = null;
-    this.aliens = null;
+    this.alienGrid = null;
     this.alienLasers = [];
     this.canShoot = true;
     this.currentLevel = 1;
@@ -66,15 +67,23 @@ class Game {
     this.canvas.height = CANVAS_HEIGHT;
 
     this.player = new Player(images.player, ctx);
-    this.aliens = new AlienGrid(ctx, 50, 40, 6, 18);
+    this.alienGrid = new AlienGrid(ctx, 50, 40, 6, 18);
     this.particles = new Particles();
     requestAnimationFrame(this.start.bind(this));
   }
 
   update(timeStamp, dt) {
+    const allDead = this.alienGrid.aliens.every(alien => !alien.alive);
     if (!gameStarted && this.state !== GameStates.PLAYING) return;
 
-    if (this.player.lives === 0 && this.state !== GameStates.GAME_OVER) {
+    if(this.player.lives === 0) {
+      this.player.img = images.playerDeath;
+      sounds.playerDead.currentTime = 0;
+      sounds.playerDead.play();
+    }
+
+    if ((this.player.lives === 0 || allDead) && (this.state !== GameStates.GAME_OVER)) {
+
       this.setState(GameStates.GAME_OVER);
       this.saveScore();
       this.gameOver();
@@ -83,7 +92,7 @@ class Game {
     if (this.state == GameStates.PLAYING) {
       this.player.movement(dt);
       this.player.updateBullets(dt)
-      this.aliens.update(timeStamp, dt, this);
+      this.alienGrid.update(timeStamp, dt, this);
       this.collisionDetection(dt);
       this.updateLevel(dt);
       if (this.zooming) {
@@ -101,7 +110,7 @@ class Game {
     this.handleZoomStart();
     this.player.drawEntityOnCanvas();
     this.player.drawBullets();
-    this.aliens.drawAliensOnCanvas();
+    this.alienGrid.drawAliensOnCanvas();
 
     for (let bullet of this.alienLasers) {
       bullet.drawEntityOnCanvas();
@@ -159,10 +168,12 @@ class Game {
         built with HTML, CSS and JavaScript.  
         It’s a single-player arcade-style game 
         where the player controls a spaceship that moves 
-        horizontally between boundaries to shoot at descending alien invaders. 
-        The goal is to eliminate the aliens before they reach the bottom of the screen.`,
+        horizontally between boundaries to shoot at
+         descending alien invaders. 
+        The goal is to eliminate the aliens before 
+        they reach the bottom of the screen.`,
       thumbnail: './assets/game-screen-capture.jpeg',
-      levels: 3,
+      levels: 5,
       version: '1.0.0'
     }
   }
@@ -276,8 +287,8 @@ class Game {
       this.zooming = true;
   
 
-      this.aliens.setSpeed(this.aliens.speed + level.alienSpeed);
-      this.aliens.updateSpacing(level.spacing);
+      this.alienGrid.setSpeed(this.alienGrid.speed + level.alienSpeed);
+      this.alienGrid.updateSpacing(level.spacing);
     }
   }
 
@@ -295,7 +306,7 @@ class Game {
 
 
   checkPlayerVsAliens() {
-    let aliens = this.aliens.aliens;
+    let aliens = this.alienGrid.aliens;
     let playerHeight = clipRect.player.height - 70;
 
     let lowestY = handleAliensPlayerCollision(aliens);
@@ -307,20 +318,38 @@ class Game {
 
 
   collisionDetection() {
-    handlePlayerBulletsAlienCollision(this.player.bullets, this.aliens.aliens, this.player, images.enemyDeath);
-    handleAlienLasersPlayerCollision(this.alienLasers, this.player, sounds.playerDead, images.playerDeath);
+    handlePlayerBulletsAlienCollision(
+      this.player.bullets, 
+      this.alienGrid.aliens, 
+      this.player, 
+      images.enemyDeath
+    );
+    handleAlienLasersPlayerCollision(
+      this.alienLasers, 
+      this.player, 
+      sounds.playerDead, 
+      images.playerDeath
+    );
     this.checkPlayerVsAliens();
   }
 
   gameOver() {
+    const allDead = this.alienGrid.aliens.every(alien => !alien.alive);
+    if (allDead) {
+      gameOverTitle.innerHTML = `Crisis averted!`;
+    }
     gameOverScreen.classList.add('visible');
     scoreTracker.innerHTML = `Your Score: ${this.player.score}`;
 
     sounds.background.pause();
     sounds.background.currentTime = 0;
 
- 
-    sounds.gameOverSound.play();
+    if (gameOverTitle.innerHTML === `Crisis averted!`) {
+      sounds.victorySound.play();
+    } else {
+      sounds.radioChatter.play();
+    }
+
     playAgain.onclick = () => this.reset();
   }
 
@@ -336,7 +365,7 @@ class Game {
       this.state = GameStates.LOADING;
       this.lastTime = 0;
       this.player = null;
-      this.aliens = null;
+      this.alienGrid = null;
       this.canShoot = true;
       this.currentLevel = 1;
       this.levelTimer = 0;
