@@ -87,7 +87,7 @@ export class AlienGrid {
     constructor(ctx, x, y, rows, cols) {
         this.ctx = ctx;
         this.aliens = [];
-        this.position = new Position(x, y + 10)
+        this.position = new Position(x, y + 10);
         this.rows = rows;
         this.cols = cols;
         this.spacing = 35;
@@ -117,12 +117,14 @@ export class AlienGrid {
 
     updateSpacing(spacing) {
         this.spacing = spacing;
-        for (let i = 0; i < this.aliens.length; i++) {
+  
+        for (let i = 0; i < this.aliens.length - 1; i++) {
             const row = Math.floor(i / this.cols);
             const col = i % this.cols;
-            this.aliens[i].position.x = this.position.x + col * this.spacing;
-                
+            this.aliens[i].position.x = this.position.x + col * this.spacing;  
+
         }
+  
     }
 
     updateShooting(currentTime, dt, game) {
