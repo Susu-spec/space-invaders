@@ -67,11 +67,13 @@ export const Assets = {
     playerDead: new Audio('./assets/sounds/player-dead.wav'),
     invaderDead: new Audio('./assets/sounds/invader-killed.wav'),
     gameOverSound: new Audio('./assets/sounds/game-over.wav'),
+    victorySound: new Audio('./assets/sounds/victory-sound.mp3'),
+    radioChatter: new Audio('/assets/sounds/radio-chatter.mp3'),
     background: new Audio('./assets/sounds/space-invaders-background.mpeg')
   },
   clipRect: {
     player: { x: 0, y: 0, width: 50, height: 40 },
-    alien: { x: 0, y: 0, width: 20, height: 20 },
+    alien: { x: 0, y: 0, width: 25, height: 25 },
     bullet: { x: 0, y: 0, width: 20, height: 20 }
   },
 }
