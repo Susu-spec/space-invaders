@@ -165,11 +165,25 @@
   }
 
   .loader {
-    margin: auto;
-    width: 50px;
-    height: 50px;
-    background-color: #FF5C35;
-    animation: spin 2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    height: .875rem;
+    aspect-ratio: 6;
+    display: flex;
+  }
+
+  .loader:before,
+  .loader:after {
+    content: "";
+    flex: 1;
+    padding-left: calc(100%/6);
+    background: radial-gradient(
+      closest-side at calc(100%/3) 50%,
+      #fff 90%, rgba(255, 255, 255, 0)) 
+      0/75% 100% content-box;
+    animation: l20 2s infinite;
+  }
+
+  .loader:after {
+    --_s:-1;
   }
   
   .btn-link {
@@ -214,6 +228,13 @@
     50% {
       transform: scale(0.5) rotate(180deg);
     }
+  }
+
+  @keyframes l20 {
+    0%       {transform:scale(var(--_s,1)) translate(0)    rotate(0)}
+    25%      {transform:scale(var(--_s,1)) translate(-25%) rotate(0)}
+    50%      {transform:scale(var(--_s,1)) translate(-25%) rotate(1turn)}
+    75%,100% {transform:scale(var(--_s,1)) translate(0)    rotate(1turn)}
   }
 
 
