@@ -66,7 +66,11 @@
     <!-- Game Area: Contains canvas element -->
     <section aria-label="Game Area">
       <!-- Game canvas: All game elements are drawn here -->
-      <canvas class="canvas" id="game-screen"></canvas>
+      <canvas class="canvas" id="game-screen">
+        <!-- Fallback if canvas fails to load -->
+        Your browser does not support HTML5
+        Canvas.
+      </canvas>
     </section>
 
 
