@@ -66,9 +66,15 @@ class Game {
     this.canvas.width = CANVAS_WIDTH;
     this.canvas.height = CANVAS_HEIGHT;
 
+    sounds.victorySound.pause();
+    sounds.victorySound.currentTime = 0;
+    sounds.radioChatter.pause();
+    sounds.radioChatter.currentTime = 0;
+
     this.player = new Player(images.player, ctx);
     this.alienGrid = new AlienGrid(ctx, 50, 40, 6, 18);
     this.particles = new Particles();
+    
     requestAnimationFrame(this.start.bind(this));
   }
 
@@ -82,7 +88,9 @@ class Game {
       sounds.playerDead.play();
     }
 
-    if ((this.player.lives === 0 || allDead) && (this.state !== GameStates.GAME_OVER)) {
+    if ((this.player.lives === 0 && 
+      this.state !== GameStates.GAME_OVER) || (
+      allDead && this.state !== GameStates.GAME_OVER)) {
 
       this.setState(GameStates.GAME_OVER);
       this.saveScore();
@@ -187,7 +195,7 @@ class Game {
         return;
 
       case 'Enter':
-        if (this.state !== GameStates.PAUSED) {
+        if (this.state === GameStates.LOADING) {
           gameStarted = true;
           this.setState(GameStates.PLAYING);
         }
@@ -344,9 +352,13 @@ class Game {
     sounds.background.pause();
     sounds.background.currentTime = 0;
 
+
     if (gameOverTitle.innerHTML === `Crisis averted!`) {
+
+      sounds.victorySound.loop = false;
       sounds.victorySound.play();
     } else {
+      sounds.radioChatter.loop = false;
       sounds.radioChatter.play();
     }
 
@@ -355,29 +367,31 @@ class Game {
 
   reset() {
     const loading = document.getElementById('loading-screen');
-  
+
     gameOverScreen.classList.remove('visible');
     loading.classList.add('visible');
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        loading.classList.remove('visible');
+
+        this.state = GameStates.LOADING;
+        this.lastTime = 0;
+        this.player = null;
+        this.alienGrid = null;
+        this.canShoot = true;
+        this.currentLevel = 1;
+        this.levelTimer = 0;
+        this.zooming = false;
+        this.zoomTimer = 0;
+        this.zoomLevel = 1;
+        this.alienLasers = [];
+
+        this.init();
+      }, 5000);
+    });
   
-    setTimeout(() => {  
-      loading.classList.remove('visible');
-
-      this.state = GameStates.LOADING;
-      this.lastTime = 0;
-      this.player = null;
-      this.alienGrid = null;
-      this.canShoot = true;
-      this.currentLevel = 1;
-      this.levelTimer = 0;
-      this.zooming = false;
-      this.zoomTimer = 0;
-      this.zoomLevel = 1;
-      this.alienLasers = [];
-
-      this.init();
-    }, 500); 
   }
-  
 }
 
 const canvas = document.getElementById('game-screen');
