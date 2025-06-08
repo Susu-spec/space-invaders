@@ -52,3 +52,24 @@ The game uses a modular component-based architecture inspired by some entity-com
 - Custom zooming effect on level transitions
 - Score-based level progression
 - Sound integration
+
+
+## Code Structure
+├── assets/
+│ └── images/ # Game object and background images (e.g., player, aliens...)
+│ └── raster-forge-font/ # Custom font assets 
+│ └── sounds/
+├── index.html # Game entry point
+├── css/
+│ └── main.css # Core styles
+├── js/
+│ ├── main.mjs # Game loop, input handling, rendering
+│ ├── game-entity.mjs # Classes for movable objects
+│ ├── assets.mjs # Organizes sounds, images, fonts
+│ ├── helpers.mjs # Utility functions (e.g., collision detection, randomizers...)
+│ ├── levels.mjs # Level configs: speed, spacing
+│ ├── bullets.mjs # Bullet and laser logic (player & alien)
+│ ├── particles.mjs # Particle system for explosions
+│ ├── constants.mjs # Shared constants: canvas size, key mappings
+│ ├── alien.mjs # Alien grid system and enemy logic
+│ └── player.mjs # Player class, movement, and shooting
