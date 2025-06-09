@@ -13,7 +13,7 @@
 import { ALIEN_IMAGES, ALIEN_POINTS } from "./assets.mjs";
 import AnimatedGameEntity, { Position } from "./game-entity.mjs";
 import { Assets } from "./assets.mjs";
-import { CANVAS_WIDTH } from "./constants.mjs";
+import { LOGICAL_WIDTH } from "./constants.mjs";
 import { Laser } from "./bullets.mjs";
 
 const { sounds, clipRect } = Assets;
@@ -161,7 +161,7 @@ export class AlienGrid {
 
             const nextXPosition = alien.position.x + xVelocity;
 
-            if (nextXPosition <= 50 ||( nextXPosition + alien.img.width) >= CANVAS_WIDTH - 50) {
+            if (nextXPosition <= 50 ||( nextXPosition + alien.img.width) >= LOGICAL_WIDTH - 50) {
                 shouldStepDown = true;
                 this.direction *= -1;
                 break;

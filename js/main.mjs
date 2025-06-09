@@ -25,14 +25,14 @@ import {
   startScreen, 
   playAgain, 
   GameStates,
-  CANVAS_HEIGHT, 
-  CANVAS_WIDTH, 
   CENTER_X, 
   CENTER_Y, 
   ZOOM_DURATION, 
   MAX_ZOOM, 
   keys,
-  gameOverTitle
+  gameOverTitle,
+  LOGICAL_WIDTH,
+  LOGICAL_HEIGHT
 } from './utils/constants.mjs';
 import { Player } from './utils/player.mjs';
 import { AlienGrid } from './utils/alien.mjs';
@@ -63,8 +63,7 @@ class Game {
 
   init() {
     startScreen.classList.add('visible');
-    this.canvas.width = CANVAS_WIDTH;
-    this.canvas.height = CANVAS_HEIGHT;
+    this.resizeCanvas();
 
     sounds.victorySound.pause();
     sounds.victorySound.currentTime = 0;
@@ -223,15 +222,15 @@ class Game {
   }
 
   drawScore() {
-    const gradient = ctx.createLinearGradient(CANVAS_WIDTH - 200, 40, (CANVAS_WIDTH - 200) + 150, 40);
+    const gradient = ctx.createLinearGradient(LOGICAL_WIDTH - 200, 40, (LOGICAL_WIDTH - 200) + 150, 40);
     gradient.addColorStop(0, "#037070");
     gradient.addColorStop(1, '#00ffff');
 
     ctx.font = "1rem 'Press Start 2P', monospace";
     ctx.fillStyle = gradient;
-    ctx.fillText(`Score: ${this.player.score}`, CANVAS_WIDTH - 200, 40);
-    ctx.fillText(`Level: ${this.currentLevel}`, CANVAS_WIDTH - 800, 40);
-    ctx.fillText(`High Score: ${this.highScore}`, CANVAS_WIDTH - 600, 40);
+    ctx.fillText(`Score: ${this.player.score}`, LOGICAL_WIDTH - 200, 40);
+    ctx.fillText(`Level: ${this.currentLevel}`, LOGICAL_WIDTH - 800, 40);
+    ctx.fillText(`High Score: ${this.highScore}`, LOGICAL_WIDTH - 600, 40);
 
   }
 
@@ -247,7 +246,7 @@ class Game {
   }
 
   clearScreen() {
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    ctx.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT)
   }
 
   handleZoomStart() {
@@ -278,7 +277,7 @@ class Game {
     } else {
       const t = this.zoomTimer / ZOOM_DURATION;
       this.zoomLevel = 1 + (MAX_ZOOM - 1) * (1 - Math.pow(1 - t, 3));
-      levelUpScreen.classList.add('visible');
+      if (this.state === GameStates.PLAYING) levelUpScreen.classList.add('visible');
     }
   }
 
@@ -319,7 +318,7 @@ class Game {
 
     let lowestY = handleAliensPlayerCollision(aliens);
 
-    if (lowestY >= (CANVAS_HEIGHT + playerHeight)) {
+    if (lowestY >= (LOGICAL_HEIGHT + playerHeight)) {
       triggerGameOver(game, sounds);
     }
   }
@@ -392,6 +391,21 @@ class Game {
     });
   
   }
+
+  resizeCanvas() {
+    const ratio = window.devicePixelRatio || 1;
+    this.canvas.width = LOGICAL_WIDTH * ratio;
+    this.canvas.height = LOGICAL_HEIGHT * ratio;
+
+    this.canvas.style.width = LOGICAL_WIDTH + 'px';
+    this.canvas.style.height = LOGICAL_HEIGHT + 'px';
+
+    
+
+     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(ratio, ratio);
+    ctx.imageSmoothingEnabled = true;
+  }
 }
 
 const canvas = document.getElementById('game-screen');
@@ -404,4 +418,14 @@ document.addEventListener('keydown', (e) => {
   game.handleKeyDown(e);
 });
 
+canvas.addEventListener('touchstart', (e) => {
+  if (game.state === GameStates.LOADING && !gameStarted) {
+    e.preventDefault();
+    gameStarted = true;
+    game.setState(GameStates.PLAYING);
+  }
+}, { passive: false });
+
 document.addEventListener('keyup', (e) => game.handleKeyUp(e));
+
+window.addEventListener('resize', () => game.resizeCanvas())
