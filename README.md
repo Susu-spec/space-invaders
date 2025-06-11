@@ -58,11 +58,7 @@ The game uses a modular component-based architecture inspired by some entity-com
 ├── assets/  
 │ └── images/ # Game object and background images (e.g., player, aliens...)  
 │ └── raster-forge-font/ # Custom font assets  
-│ └── sounds/  
-├── index.html # Game entry point  
-├── css/  
-│ └── main.css # Core styles  
-├── js/  
+│ └── sounds/<br>├── index.html # Game entry point<br>├── css/<br>│ └── main.css # Core styles<br>├── js/  
 │ ├── main.mjs # Game loop, input handling, rendering  
 │ ├── game-entity.mjs # Classes for movable objects  
 │ ├── assets.mjs # Organizes sounds, images, fonts  
