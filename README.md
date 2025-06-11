@@ -55,7 +55,7 @@ The game uses a modular component-based architecture inspired by some entity-com
 
 
 ## Code Structure
-├── assets/   
+├── assets/  
 │ └── images/ # Game object and background images (e.g., player, aliens...)  
 │ └── raster-forge-font/ # Custom font assets  
 │ └── sounds/  
