@@ -160,7 +160,15 @@ class Game {
   }
 
   getState() {
-    return this.state;
+     return {
+      level: this.currentLevel,
+      score: this.score,
+      state: this.state,
+      lives: this.player.lives,
+      playerPosition: { x: this.player.position.x, y: this.player.position.y },
+      alienCount: this.aliens.filter(a => a.alive).length,
+      timestamp: performance.now()
+    };
   }
 
   setState(state) {
