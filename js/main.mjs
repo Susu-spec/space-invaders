@@ -62,8 +62,8 @@ class Game {
   }
 
   init() {
-    startScreen.classList.add('visible');
     this.resizeCanvas();
+    startScreen.classList.add('visible');
 
     sounds.victorySound.pause();
     sounds.victorySound.currentTime = 0;
