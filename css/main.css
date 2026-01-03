@@ -238,3 +238,20 @@
   }
 
 
+
+   /* ====================================
+    BREAKPOINTS
+   ==================================== */
+   @media screen and (max-width: 768px) {
+    .text-lgr {
+      font-size: 8dvw;
+    }
+
+    .text-md {
+      font-size: 3dvw;
+    }
+
+    .text-xs {
+      font-size: 1.5dvw;
+    }
+   }
