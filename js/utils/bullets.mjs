@@ -46,7 +46,7 @@ export class Bullet extends AnimatedGameEntity {
 
   movement(dt) {
     this.position.y -= (this.direction * this.speed) * dt;
-    this.position.y = clamp(this.position.y, 0, CANVAS_HEIGHT - this.clipRect.height)
+    this.position.y = clamp(this.position.y, 0, CANVAS_HEIGHT() - this.clipRect.height)
     if (this.position.y <= 0) {
       this.alive = false;
     }
@@ -65,7 +65,7 @@ export class Laser extends Bullet {
 
   movement(dt) {
     this.position.y -= (this.direction * this.speed) * dt;
-    if (this.position.y >= CANVAS_HEIGHT) {
+    if (this.position.y >= CANVAS_HEIGHT()) {
       this.alive = false;
     }
     this.updateBounding();

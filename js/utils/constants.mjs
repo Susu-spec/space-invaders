@@ -8,8 +8,8 @@
  * Const definitions used across files. 
  */
 
-export const CANVAS_WIDTH = window.innerWidth;
-export const CANVAS_HEIGHT = window.innerHeight;
+export const CANVAS_WIDTH = () => window.innerWidth;
+export const CANVAS_HEIGHT = () => window.innerHeight;
 export const CENTER_X = CANVAS_WIDTH / 2;
 export const CENTER_Y = CANVAS_HEIGHT / 2;
 
