@@ -45,11 +45,12 @@
     <!-- Game start screen: Contains Gameplay start visual -->
     <section 
       id="start-screen" 
-      class="visible start-screen" 
+      class="start-screen" 
       aria-label="Welcome Screen"
     >
       <h1 class="text-lgr">Space Invaders</h1>
-      <p class="text-md warm-brown">Press Enter to play!</p>
+      <p class="text-md warm-brown show-desktop">Press Enter to play!</p>
+      <p class="text-md warm-brown show-mobile">Tap the Screen to Play!</p>
       <div class="text-xs credits text-shadow-dark" id="credits">
         <p>------</p>
         <div id="desktop-controls" class="credits">
@@ -77,6 +78,9 @@
     <section aria-label="Game Area">
       <!-- Game canvas: All game elements are drawn here -->
       <canvas class="canvas" id="game-screen"></canvas>
+      <button id="pause-play-button">
+        <img id="pausePlayIcon" src="/assets/images/pause.png" aria-label="pause/play icon" />
+      </button>
     </section>
 
 
@@ -90,7 +94,8 @@
       class="ui-overlay text-lg font-secondary"
     >
       <h1 class="text-lgr">Space Invaders</h1>
-      <p class="text-md warm-brown">Press Esc to continue</p>
+      <p class="text-md warm-brown show-desktop">Press Esc to continue</p>
+      <p class="show-mobile text-md warm-brown">Tap ▶ to Continue</p>
     </section>
 
 
@@ -104,11 +109,19 @@
     </section>
 
 
-    <!-- Loading screen: Contains loading screen -->
+    <!-- Loading screens: Contains loading screen -->
     <section 
       aria-label="Loading Screen" 
       id="loading-screen" 
       class="ui-overlay text-lg font-secondary"
+    >
+      <div class="loader"></div>
+    </section>
+
+    <section 
+      aria-label="Loading Start Screen" 
+      id="loading-start-screen" 
+      class="ui-overlay visible text-lg font-secondary"
     >
       <div class="loader"></div>
     </section>
@@ -124,6 +137,9 @@
       <p id="score" class="text-md">Your score:</p>
       <p id="play-again-link" class="text-md btn-link">Play again?</p>
     </section>
+    
+    
+
   </main>
   <script type="module" src="./js/main.mjs"></script>
 </body>
