@@ -21,6 +21,7 @@ export const gameOverTitle = document.getElementById('game-over-title');
 export const scoreTracker = document.getElementById('score');
 export const playAgain = document.getElementById('play-again-link');
 export const startScreen = document.getElementById('start-screen');
+export const pausePlayIcon = document.getElementById("pausePlayIcon");
 
 export const GameStates = {
   LOADING: 'loading',
