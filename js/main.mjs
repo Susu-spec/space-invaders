@@ -96,7 +96,6 @@ class Game {
       if (this.state === GameStates.LOADING) { 
         gameStarted = true; 
         this.setState(GameStates.PLAYING); 
-        console.log(this.state)
         requestAnimationFrame(this.start.bind(this)); 
       }
     }, { passive: false });
@@ -495,7 +494,6 @@ class Game {
 
   toggleSound() {
     this.soundEnabled = !this.soundEnabled;
-    console.log("toggle")
     for (let key in sounds) { 
       if (key === "radioChatter" || key === "victorySound") continue;
       sounds[key].muted = !this.soundEnabled; 
