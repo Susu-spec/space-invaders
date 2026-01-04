@@ -15,7 +15,8 @@ import {
   handlePlayerBulletsAlienCollision, 
   handleAliensPlayerCollision, 
   triggerGameOver, 
-  handleAlienLasersPlayerCollision 
+  handleAlienLasersPlayerCollision,
+  preventOverlap
 } from './utils/helpers.mjs';
 import { Assets } from './utils/assets.mjs';
 import { levels } from './utils/levels.mjs';
@@ -32,7 +33,8 @@ import {
   ZOOM_DURATION, 
   MAX_ZOOM, 
   keys,
-  gameOverTitle
+  gameOverTitle,
+  pausePlayIcon
 } from './utils/constants.mjs';
 import { Player } from './utils/player.mjs';
 import { AlienGrid } from './utils/alien.mjs';
@@ -58,13 +60,15 @@ class Game {
     this.zoomLevel = 1;
     this.particles = null;
     this.highScore = localStorage.getItem('highScore') ?? 0;
-
+    this.soundEnabled = true;
+    this.volumeIconBounds = null;
+    this.draggingPlayer = false;
   }
 
   init() {
-    startScreen.classList.add('visible');
-    this.canvas.width = CANVAS_WIDTH;
-    this.canvas.height = CANVAS_HEIGHT;
+    this.setState(GameStates.LOADING);
+    this.canvas.width = CANVAS_WIDTH();
+    this.canvas.height = CANVAS_HEIGHT();
 
     sounds.victorySound.pause();
     sounds.victorySound.currentTime = 0;
@@ -74,8 +78,110 @@ class Game {
     this.player = new Player(images.player, ctx);
     this.alienGrid = new AlienGrid(ctx, 50, 40, 6, 18);
     this.particles = new Particles();
+
+    this.bindEvents();
+  }
+
+  bindEvents() { 
+    document.addEventListener('keydown', (e) => { 
+      this.handleInput(e); 
+      this.handleKeyDown(e); 
+    });
+
     
-    requestAnimationFrame(this.start.bind(this));
+    document.addEventListener('keyup', (e) => this.handleKeyUp(e));
+
+    // Start game on Mobile: tap anywhere on the canvas
+    startScreen.addEventListener('touchstart', (e) => {
+      if (this.state === GameStates.LOADING) { 
+        gameStarted = true; 
+        this.setState(GameStates.PLAYING); 
+        requestAnimationFrame(this.start.bind(this)); 
+      }
+    }, { passive: false });
+
+    this.canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+
+      const x = (touch.clientX - rect.left) * scaleX;
+      const y = (touch.clientY - rect.top) * scaleY;
+
+      // Check if touch is inside player bounds
+      if (
+        x >= this.player.position.x &&
+        x <= this.player.position.x + this.player.img.width &&
+        y >= this.player.position.y &&
+        y <= this.player.position.y + this.player.img.height
+      ) {
+        this.draggingPlayer = true;
+        this.touchStartX = x;
+        this.touchStartY = y;
+      }
+
+      // Volume icon toggle
+      this.handleVolumeToggle(x, y);
+      this.handleGamePlayPause(x, y);
+    });
+
+    this.canvas.addEventListener('touchmove', (e) => {
+      if (!this.draggingPlayer) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+
+      const x = (touch.clientX - rect.left) * scaleX;
+      this.player.position.x = Math.max(0, Math.min(x, this.canvas.width - this.player.img.width));
+      this.player.updateBounding();
+    });
+
+    this.canvas.addEventListener('touchend', (e) => {
+      if (this.draggingPlayer) {
+        const touch = e.changedTouches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+
+        const x = (touch.clientX - rect.left) * scaleX;
+        const y = (touch.clientY - rect.top) * scaleY;
+
+        const dx = Math.abs(x - this.touchStartX);
+        const dy = Math.abs(y - this.touchStartY);
+
+        // If finger didn’t move much = treat as tap and shoot
+        if (dx < 10 && dy < 10) {
+          const now = performance.now();
+          if (
+            this.player &&
+            this.state === GameStates.PLAYING &&
+            now - this.player.lastShotTime >= 300
+          ) {
+            this.player.shoot();
+            sounds.shoot.currentTime = 0;
+            sounds.shoot.play();
+            this.player.lastShotTime = now;
+          }
+        }
+      }
+
+      this.draggingPlayer = false;
+    });
+
+    pausePlayIcon.addEventListener("click", () => {
+      if (this.state === GameStates.PLAYING) {
+        this.setState(GameStates.PAUSED);
+        pausePlayIcon.src = "/assets/images/play.png";
+      } else if (this.state === GameStates.PAUSED) {
+        this.setState(GameStates.PLAYING);
+        pausePlayIcon.src = "/assets/images/pause.png";
+        requestAnimationFrame(this.start.bind(this));
+      }
+    });
+
   }
 
   update(timeStamp, dt) {
@@ -99,6 +205,7 @@ class Game {
 
     if (this.state == GameStates.PLAYING) {
       this.player.movement(dt);
+      preventOverlap(this.player, this.volumeIconBounds);
       this.player.updateBullets(dt)
       this.alienGrid.update(timeStamp, dt, this);
       this.collisionDetection(dt);
@@ -119,6 +226,7 @@ class Game {
     this.player.drawEntityOnCanvas();
     this.player.drawBullets();
     this.alienGrid.drawAliensOnCanvas();
+    this.drawVolumeIcon();
 
     for (let bullet of this.alienLasers) {
       bullet.drawEntityOnCanvas();
@@ -137,15 +245,14 @@ class Game {
     }
   }
 
-  start() {
-    const timeStamp = performance.now();
+  start(timeStamp) {
     const deltaTime = (timeStamp - this.lastTime) / 1000;
-
     this.lastTime = timeStamp;
     this.update(timeStamp, deltaTime);
     this.draw();
     requestAnimationFrame(this.start.bind(this));
   }
+
 
   pause() {
     const pauseScreen = document.getElementById('pause-screen');
@@ -171,9 +278,16 @@ class Game {
     };
   }
 
-  setState(state) {
-    this.state = state
+  setState(newState) {
+    this.state = newState;
+
+    if (newState === GameStates.GAME_OVER || newState === GameStates.LOADING) {
+      pausePlayIcon.style.display = "none";
+    } else if (newState === GameStates.PLAYING || newState === GameStates.PAUSED) {
+      pausePlayIcon.style.display = "block";
+    }
   }
+
 
   getMetaData() {
     return {
@@ -206,6 +320,7 @@ class Game {
         if (this.state === GameStates.LOADING) {
           gameStarted = true;
           this.setState(GameStates.PLAYING);
+          requestAnimationFrame(this.start.bind(this));
         }
         break;
 
@@ -231,16 +346,44 @@ class Game {
   }
 
   drawScore() {
-    const gradient = ctx.createLinearGradient(CANVAS_WIDTH - 200, 40, (CANVAS_WIDTH - 200) + 150, 40);
-    gradient.addColorStop(0, "#037070");
-    gradient.addColorStop(1, '#00ffff');
+    const fontSize = Math.max(12, CANVAS_WIDTH() * 0.0015);
+    const margin = CANVAS_WIDTH() * 0.095;
+    const lineHeight = fontSize + 10;
 
-    ctx.font = "1rem 'Press Start 2P', monospace";
+    const gradient = ctx.createLinearGradient(
+      CANVAS_WIDTH() - margin, lineHeight,
+      CANVAS_WIDTH() - margin + 150, lineHeight
+    );
+    gradient.addColorStop(0, "#8B4513");
+    gradient.addColorStop(1, "#CD853F");
+    ctx.font = `${fontSize}px 'Press Start 2P', monospace`;
     ctx.fillStyle = gradient;
-    ctx.fillText(`Score: ${this.player.score}`, CANVAS_WIDTH - 200, 40);
-    ctx.fillText(`Level: ${this.currentLevel}`, CANVAS_WIDTH - 800, 40);
-    ctx.fillText(`High Score: ${this.highScore}`, CANVAS_WIDTH - 600, 40);
 
+    ctx.textAlign = "right";
+    ctx.fillText(`Score: ${this.player.score}`, CANVAS_WIDTH() - 20, lineHeight);
+    ctx.fillText(`Level: ${this.currentLevel}`, CANVAS_WIDTH() - 20, lineHeight * 2);
+    ctx.fillText(`High Score: ${this.highScore}`, CANVAS_WIDTH() - 20, lineHeight * 3);
+
+  }
+
+  drawVolumeIcon() {
+    const iconSize = 24;
+    const x = CANVAS_WIDTH() - iconSize - 12;
+    const y = CANVAS_HEIGHT() - iconSize - 12;
+
+    const icon = this.soundEnabled ? images.volumeOn : images.volumeOff;
+    ctx.drawImage(icon, x, y, iconSize, iconSize);
+    this.volumeIconBounds = { x, y, width: iconSize, height: iconSize };
+
+  }
+
+  // Handle Volume Mobile interaction
+  handleVolumeToggle(x, y) {
+    const b = this.volumeIconBounds;
+    if (b && x >= b.x && x <= b.x + b.width &&
+            y >= b.y && y <= b.y + b.height) {
+      this.toggleSound();
+    }
   }
 
   handleKeyDown(e) {
@@ -255,7 +398,7 @@ class Game {
   }
 
   clearScreen() {
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    ctx.clearRect(0, 0, CANVAS_WIDTH(), CANVAS_HEIGHT())
   }
 
   handleZoomStart() {
@@ -327,7 +470,7 @@ class Game {
 
     let lowestY = handleAliensPlayerCollision(aliens);
 
-    if (lowestY >= (CANVAS_HEIGHT + playerHeight)) {
+    if (lowestY >= (CANVAS_HEIGHT() + playerHeight)) {
       triggerGameOver(game, sounds);
     }
   }
@@ -349,8 +492,29 @@ class Game {
     this.checkPlayerVsAliens();
   }
 
+  toggleSound() {
+    this.soundEnabled = !this.soundEnabled;
+    for (let key in sounds) { 
+      if (key === "radioChatter" || key === "victorySound") continue;
+      sounds[key].muted = !this.soundEnabled; 
+    }
+  }
+
+
+  handleResize() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+
+    this.canvas.width = CANVAS_WIDTH();
+    this.canvas.height = CANVAS_HEIGHT();
+
+    this.draw();
+  }
+
+
   gameOver() {
     const allDead = this.alienGrid.aliens.every(alien => !alien.alive);
+
     if (allDead) {
       gameOverTitle.innerHTML = `Crisis averted!`;
     }
@@ -394,6 +558,10 @@ class Game {
         this.zoomTimer = 0;
         this.zoomLevel = 1;
         this.alienLasers = [];
+        this.soundEnabled = true;
+        for (let key in sounds) {
+          sounds[key].muted = false;
+        }
 
         this.init();
       }, 5000);
@@ -404,12 +572,21 @@ class Game {
 
 const canvas = document.getElementById('game-screen');
 const game = new Game(canvas);
-var ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d');
 
-window.onload = () => game.init();
-document.addEventListener('keydown', (e) => {
-  game.handleInput(e);
-  game.handleKeyDown(e);
+window.onload = () => {
+  game.init();
+  setTimeout(() => {
+    document.getElementById('loading-start-screen').classList.remove('visible'); 
+    document.getElementById('start-screen').classList.add('visible');
+  }, 1500)
+}
+
+window.addEventListener('resize', () => {
+  this.canvas.width = CANVAS_WIDTH(); 
+  this.canvas.height = CANVAS_HEIGHT(); 
+  this.player.resetPosition();
+  this.draw();
 });
 
-document.addEventListener('keyup', (e) => game.handleKeyUp(e));
+

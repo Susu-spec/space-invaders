@@ -60,7 +60,11 @@ export const Assets = {
     bullet: await createImage('./assets/images/player-projectile.jpg'),
     laser: await createImage('./assets/images/laser.jpg'),
     playerDeath: await createImage('./assets/images/player-death.jpg'),
-    enemyDeath: await createImage('./assets/images/enemy-death.jpg')
+    enemyDeath: await createImage('./assets/images/enemy-death.jpg'),
+    volumeOff: await createImage('./assets/images/volume-down.png'),
+    volumeOn: await createImage('./assets/images/volume-up.png'),
+    play: await createImage('./assets/images/play.png'),
+    pause: await createImage('./assets/images/pause.png')
   },
   sounds: {
     shoot: new Audio('./assets/sounds/shoot.wav'),

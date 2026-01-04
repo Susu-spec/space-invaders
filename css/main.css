@@ -8,8 +8,6 @@
  * Styles for the Space Invaders game. 
  * Includes game-specific styling for layouts, texts and animations.
  * 
- * Dependencies:
- * - design-system.css: Core design system
  */
 
 
@@ -85,6 +83,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    line-height: 1.5;
   }
 
   .canvas {
@@ -115,8 +114,10 @@
     justify-content: center;
     gap: var(--spacing-small);
     opacity: 0;
-    display: none;
+    display: flex;
     z-index: 2;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
   }
 
 
@@ -128,6 +129,7 @@
   .visible {
     display: flex !important;
     opacity: 1 !important;
+    pointer-events: auto;
   }
 
   .rotate-90 {
@@ -164,10 +166,16 @@
     gap: var(--spacing-small);
   }
 
+  #loading-start-screen {
+    background: url(/assets/images/space-invaders-background.jpg) no-repeat bottom center fixed;
+    height: 100dvh;
+  }
+
   .loader {
     height: .875rem;
     aspect-ratio: 6;
     display: flex;
+    z-index: 300;
   }
 
   .loader:before,
@@ -194,6 +202,48 @@
   .btn-link:hover {
     color: var(--accent-color);
   }
+
+  .show-desktop {
+    display: block;
+  }
+
+  .show-mobile {
+    display: none;
+  }
+
+  #mobile-controls {
+    display: none;
+  }
+
+  #desktop-controls {
+    display: flex;
+  }
+
+  #pause-play-button {
+    position: absolute;
+    top: 4.5dvw;
+    left: 3.9dvw;
+    display: flex;
+    align-items: center;
+    background-color: inherit;
+    cursor: pointer;
+    outline: none;
+    border: 0;
+  }
+
+  #pause-play-button:focus,
+  #pause-play-button:focus-visible {
+    outline: none;
+    border: 0;
+  }
+
+  #pauseBtn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+  }
+
 
 
 
@@ -238,3 +288,41 @@
   }
 
 
+
+   /* ====================================
+    BREAKPOINTS
+   ==================================== */
+   @media screen and (max-width: 768px) {
+    .text-lgr {
+      font-size: 8dvw;
+    }
+
+    .text-md {
+      font-size: 3dvw;
+    }
+
+    .text-xs {
+      font-size: 1.5dvw;
+    }
+
+    #mobile-controls {
+      display: flex;
+    }
+
+    #desktop-controls {
+      display: none;
+    }
+
+    #pause-play-button {
+      top: 10dvh;
+      left: 6dvw;
+    }
+
+    .show-desktop {
+      display: none;
+    }
+
+    .show-mobile {
+      display: block;
+    }
+   }

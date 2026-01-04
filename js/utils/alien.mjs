@@ -17,6 +17,7 @@ import { CANVAS_WIDTH } from "./constants.mjs";
 import { Laser } from "./bullets.mjs";
 
 const { sounds, clipRect } = Assets;
+export const isMobile = window.innerWidth < 768;
 
 /**
  * Class representing alien
@@ -35,10 +36,11 @@ export class Alien extends AnimatedGameEntity {
      * @param {number} points - Points to update Player score by
      */
 
-    constructor(ctx, img, x, y, points) {
+    constructor(ctx, img, x, y, points, scale = 1) {
         super(img, x, y, points, clipRect.alien)
         this.ctx = ctx;
         this.clipRect = clipRect.alien;
+        this.scale = scale;
         this.alive = true;
         this.points = points;
         this.dying = false;
@@ -59,8 +61,8 @@ export class Alien extends AnimatedGameEntity {
             this.img, 
             this.position.x, 
             this.position.y, 
-            this.clipRect.width, 
-            this.clipRect.height
+            this.clipRect.width * this.scale, 
+            this.clipRect.height * this.scale
         );
         this.ctx.save();
         this.ctx.globalCompositeOperation = 'lighter';
@@ -88,9 +90,9 @@ export class AlienGrid {
         this.ctx = ctx;
         this.aliens = [];
         this.position = new Position(x, y + 10);
-        this.rows = rows;
-        this.cols = cols;
-        this.spacing = 35;
+        this.rows = isMobile ? Math.floor(rows / 2) : rows; 
+        this.cols = isMobile ? Math.floor(cols / 2) : cols; 
+        this.spacing = isMobile ? 30 : 35;
         this.direction = 1;
         this.speed = 20;
         this.stepDown = 10;
@@ -105,7 +107,7 @@ export class AlienGrid {
                 const img = ALIEN_IMAGES[row % ALIEN_IMAGES.length];
                 const points = ALIEN_POINTS[row % ALIEN_POINTS.length];
 
-                this.aliens.push(new Alien(this.ctx, img, x, y, points));
+                this.aliens.push(new Alien(this.ctx, img, x, y, points, this.scale));
 
             }
         }
@@ -161,7 +163,7 @@ export class AlienGrid {
 
             const nextXPosition = alien.position.x + xVelocity;
 
-            if (nextXPosition <= 50 ||( nextXPosition + alien.img.width) >= CANVAS_WIDTH - 50) {
+            if (nextXPosition <= 50 ||( nextXPosition + alien.img.width) >= CANVAS_WIDTH() - 50) {
                 shouldStepDown = true;
                 this.direction *= -1;
                 break;

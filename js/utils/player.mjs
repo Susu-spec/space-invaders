@@ -33,7 +33,7 @@ export class Player extends AnimatedGameEntity {
    * @param {CanvasRenderingContext2D} ctx - Canvas context initialized at entry file
    */
   constructor(img, ctx) {
-    super(img, CANVAS_WIDTH / 2, CANVAS_HEIGHT - (clipRect.player.height / 2) - 10, clipRect.player)
+    super(img, CANVAS_WIDTH() / 2, CANVAS_HEIGHT() - (clipRect.player.height / 2) - 10, clipRect.player)
     this.ctx = ctx;
     this.img = img;
     this.clipRect.width = this.img.width;
@@ -52,7 +52,7 @@ export class Player extends AnimatedGameEntity {
   reset() {
     this.lives = 3;
     this.score = 0;
-    this.position.set(CANVAS_WIDTH / 2, CANVAS_HEIGHT - (clipRect.player.height / 2) - 10);
+    this.position.set(CANVAS_WIDTH() / 2, CANVAS_HEIGHT() - (clipRect.player.height / 2) - 10);
     this.bullets = []
     this.img = images.player;
   }
@@ -75,7 +75,7 @@ export class Player extends AnimatedGameEntity {
       }
     }
 
-    this.position.x = clamp(this.position.x, 50, CANVAS_WIDTH - this.img.width);
+    this.position.x = clamp(this.position.x, 50, CANVAS_WIDTH() - this.img.width);
 
     if (keys['ArrowLeft']) {
       this.position.x -= this.xAccel * dt
@@ -122,5 +122,10 @@ export class Player extends AnimatedGameEntity {
         bullet.drawEntityOnCanvas();
       }
     }
+  }
+
+  resetPosition() {
+    this.x = CANVAS_WIDTH() / 2;
+    this.y = CANVAS_HEIGHT() - (this.clipRect.height / 2) - 10;
   }
 }

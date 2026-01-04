@@ -264,3 +264,28 @@ export function triggerGameOver(game, sounds) {
     sounds.playerDead.play();
     game.gameOver();
 }
+
+/**
+ * Prevents player from overlapping with volume
+ * @param {Object} player
+ * @param {Object} volumeBounds 
+ * @returns
+ */
+export function preventOverlap(player, volumeBounds) {
+    if (!volumeBounds) return;
+    const overlap = !(
+        player.position.x + player.img.width < volumeBounds.x ||
+        player.position.x > volumeBounds.x + volumeBounds.width ||
+        player.position.y + player.img.height < volumeBounds.y ||
+        player.position.y > volumeBounds.y + volumeBounds.height
+    );
+
+    if (overlap) {
+        // Push player horizontally away from volume icon
+        if (player.position.x < volumeBounds.x) {
+            player.position.x = volumeBounds.x - player.img.width;
+        } else {
+            player.position.x = volumeBounds.x + volumeBounds.width;
+        }
+    }
+}
