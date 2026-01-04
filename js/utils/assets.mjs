@@ -62,7 +62,9 @@ export const Assets = {
     playerDeath: await createImage('./assets/images/player-death.jpg'),
     enemyDeath: await createImage('./assets/images/enemy-death.jpg'),
     volumeOff: await createImage('./assets/images/volume-down.png'),
-    volumeOn: await createImage('./assets/images/volume-up.png')
+    volumeOn: await createImage('./assets/images/volume-up.png'),
+    play: await createImage('./assets/images/play.png'),
+    pause: await createImage('./assets/images/pause.png')
   },
   sounds: {
     shoot: new Audio('./assets/sounds/shoot.wav'),
