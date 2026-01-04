@@ -77,5 +77,5 @@ The game uses a modular component-based architecture inspired by some entity-com
 ```
 
 ### Future Development
-- Canvas dynamic resizing
-- Touch interactions
+- Menu bar with reset feature
+- Cleaner code: Refactor main `js` file
