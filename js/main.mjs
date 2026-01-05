@@ -66,6 +66,12 @@ class Game {
   }
 
   init() {
+    const loading = document.getElementById('loading-start-screen');
+    const start = document.getElementById('start-screen');
+    setTimeout(() => {
+      loading.classList.remove('visible');
+      start.classList.add('visible');
+    }, 1500);
     this.setState(GameStates.LOADING);
     this.canvas.width = CANVAS_WIDTH();
     this.canvas.height = CANVAS_HEIGHT();
@@ -91,7 +97,7 @@ class Game {
     
     document.addEventListener('keyup', (e) => this.handleKeyUp(e));
 
-    // Start game on Mobile: tap anywhere on the canvas
+    // Start game on Mobile: tap anywhere on the start screen
     startScreen.addEventListener('touchstart', (e) => {
       if (this.state === GameStates.LOADING) { 
         gameStarted = true; 
@@ -574,13 +580,7 @@ const canvas = document.getElementById('game-screen');
 const game = new Game(canvas);
 const ctx = canvas.getContext('2d');
 
-window.onload = () => {
-  game.init();
-  setTimeout(() => {
-    document.getElementById('loading-start-screen').classList.remove('visible'); 
-    document.getElementById('start-screen').classList.add('visible');
-  }, 1500)
-}
+game.init();
 
 window.addEventListener('resize', () => {
   this.canvas.width = CANVAS_WIDTH(); 
